@@ -14,14 +14,16 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models;
 using StudentManagementAPI.Data;
 using StudentManagementAPI.Data;
+using StudentManagementAPI.Middleware;
 using StudentManagementAPI.Services.Interfaces;
 using StudentManagementAPI.Services.Iplementations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 namespace StudentManagementAPI
 {
     public class Startup
@@ -38,22 +40,30 @@ namespace StudentManagementAPI
         {
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowAngular",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:4200")
-                               .AllowAnyMethod()
-                               .AllowAnyHeader();
-                    });
+                options.AddPolicy("AllowAll",
+             builder =>
+             {
+                 builder
+                     .AllowAnyOrigin()
+                     .AllowAnyMethod()
+                     .AllowAnyHeader();
+             });
             });
             services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddControllers();
+            services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters
+            .Add(new JsonStringEnumConverter());
+    });
             // 👉 ADD Ở ĐÂY
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICourseService, CourseService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<INotificationService, NotificationService>();
             var key = Encoding.UTF8.GetBytes("THIS_IS_MY_SUPER_SECRET_KEY_123456789_ABC");
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -111,12 +121,12 @@ namespace StudentManagementAPI
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "StudentManagementAPI v1"));
             }
 
-            app.UseHttpsRedirection();
-            app.UseCors("AllowAngular");
+            //app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseMiddleware<ExceptionMiddleware>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

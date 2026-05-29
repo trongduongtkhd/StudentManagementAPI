@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StudentManagementAPI.Models
 {
-    public class StudentCourse
+    public class Payment
     {
         public int Id { get; set; }
 
@@ -13,17 +13,17 @@ namespace StudentManagementAPI.Models
 
         public User User { get; set; }
 
-        // COURSE CLASS
-        public int CourseClassId { get; set; }
-
-        public CourseClass CourseClass { get; set; }
+        // TOTAL
+        public decimal TotalAmount { get; set; }
 
         // STATUS
-        public EnrollmentStatus Status { get; set; }
+        public PaymentStatus Status { get; set; }
 
-        public DateTime EnrolledAt { get; set; } 
+        // CREATED
         public DateTime CreatedAt { get; set; }
+
+        // PAYMENT ITEMS
         public ICollection<PaymentItem> PaymentItems { get; set; }
-    = new List<PaymentItem>();
+            = new List<PaymentItem>();
     }
 }

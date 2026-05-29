@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudentManagementAPI.DTOs;
+using StudentManagementAPI.Helpers;
 using StudentManagementAPI.Services.Interfaces;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -15,74 +15,144 @@ namespace StudentManagementAPI.Controllers
     {
         private readonly IUserService _userService;
 
-        public UsersController(IUserService userService)
+        public UsersController(
+            IUserService userService)
         {
             _userService = userService;
         }
 
-        // ================= ADMIN =================
+        // =====================================================
+        // ADMIN
+        // =====================================================
 
+        // GET ALL STUDENTS
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAllStudentsAsync();
-            return Ok(users);
+            var result =
+                await _userService.GetAllStudentsAsync();
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy danh sách học viên thành công",
+                    result
+                )
+            );
         }
 
+        // GET STUDENT BY ID
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Get(int id)
         {
-            var user = await _userService.GetByIdAsync(id);
-            return Ok(user);
+            var result =
+                await _userService.GetByIdAsync(id);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy thông tin học viên thành công",
+                    result
+                )
+            );
         }
 
-        // ================= USER =================
+        // =====================================================
+        // USER
+        // =====================================================
 
+        // ASSIGN COURSE
         [HttpPost("assign-course")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> AssignCourse(AssignCourseDTO dto)
+        public async Task<IActionResult> AssignCourse(
+            AssignCourseDTO dto)
         {
-            var username = User.FindFirst(ClaimTypes.Name)?.Value; 
+            var username =
+                User.FindFirst(ClaimTypes.Name)?.Value;
 
             if (string.IsNullOrEmpty(username))
-            {
-                return Unauthorized("Token không hợp lệ");
-            }
+                return Unauthorized(
+                    new ApiResponse<object>(
+                        false,
+                        "Token không hợp lệ",
+                        null
+                    )
+                );
 
-            await _userService.AssignCourseAsync(username, dto.CourseId);
+            await _userService.AssignCourseAsync(
+                username,
+                dto.CourseClassId);
 
-            return Ok(new { message = "Đăng ký course thành công" });
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Đăng ký lớp học thành công",
+                    null
+                )
+            );
         }
 
-        [HttpDelete("remove-course/{courseId}")]
+        // REMOVE COURSE
+        [HttpDelete("remove-course/{courseClassId}")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> RemoveCourse(int courseId)
+        public async Task<IActionResult> RemoveCourse(
+            int courseClassId)
         {
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var username =
+                User.FindFirst(ClaimTypes.Name)?.Value;
 
             if (string.IsNullOrEmpty(username))
-            {
-                return Unauthorized();
-            }
+                return Unauthorized(
+                    new ApiResponse<object>(
+                        false,
+                        "Token không hợp lệ",
+                        null
+                    )
+                );
 
-            await _userService.RemoveCourseAsync(username, courseId);
+            await _userService.RemoveCourseAsync(
+                username,
+                courseClassId);
 
-            return Ok(new { message = "Đã hủy course" });
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Hủy đăng ký lớp học thành công",
+                    null
+                )
+            );
         }
+
+        // GET MY COURSES
         [HttpGet("my-courses")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> GetMyCourses()
         {
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var username =
+                User.FindFirst(ClaimTypes.Name)?.Value;
 
             if (string.IsNullOrEmpty(username))
-                return Unauthorized();
+                return Unauthorized(
+                    new ApiResponse<object>(
+                        false,
+                        "Token không hợp lệ",
+                        null
+                    )
+                );
 
-            var courses = await _userService.GetMyCoursesAsync(username);
+            var result =
+                await _userService.GetMyCoursesAsync(
+                    username);
 
-            return Ok(courses);
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy danh sách khóa học thành công",
+                    result
+                )
+            );
         }
     }
 }

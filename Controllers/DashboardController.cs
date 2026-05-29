@@ -1,27 +1,50 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentManagementAPI.Services.Interfaces;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace StudentManagementAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
 
-        public DashboardController(IDashboardService dashboardService)
+        public DashboardController(
+            IDashboardService dashboardService)
         {
             _dashboardService = dashboardService;
         }
 
-        [HttpGet]
+        // ================= ADMIN =================
+
+        [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetDashboard()
+        public async Task<IActionResult> GetAdminDashboard()
         {
-            var data = await _dashboardService.GetDashboardAsync();
+            var data =
+                await _dashboardService
+                    .GetAdminDashboardAsync();
+
+            return Ok(data);
+        }
+
+        // ================= USER =================
+
+        [HttpGet("user")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetUserDashboard()
+        {
+            var username =
+                User.FindFirstValue(ClaimTypes.Name);
+
+            var data =
+                await _dashboardService
+                    .GetUserDashboardAsync(username);
+
             return Ok(data);
         }
     }

@@ -11,10 +11,10 @@ namespace StudentManagementAPI.Services.Interfaces
         Task<UserDTO> GetByIdAsync(int id);
 
         // 👉 User dùng (JWT)
-        Task AssignCourseAsync(string username, int courseId);
-        Task RemoveCourseAsync(string username, int courseId);
+        Task AssignCourseAsync(string username, int courseClassId);
+        Task RemoveCourseAsync(string username, int courseClassId);
 
         // 👉 Lấy course của chính user
-        Task<IEnumerable<CourseDTO>> GetMyCoursesAsync(string username);
+        Task<IEnumerable<CourseClassDTO>> GetMyCoursesAsync(string username);
     }
 }

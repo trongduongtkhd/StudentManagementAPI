@@ -9,16 +9,68 @@ namespace StudentManagementAPI.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Course> Courses { get; set; }
+        public DbSet<CourseClass> CourseClasses { get; set; }
         public DbSet<StudentCourse> StudentCourses { get; set; }
 
+        public DbSet<Payment> Payments { get; set; }
+
+        public DbSet<PaymentItem> PaymentItems { get; set; }
+
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // 👉 Composite key cho bảng many-to-many
             modelBuilder.Entity<StudentCourse>()
-                .HasKey(sc => new { sc.UserId, sc.CourseId });
+                .HasIndex(sc => new
+                {
+                    sc.UserId,
+                    sc.CourseClassId
+                })
+                .IsUnique();
 
+            // 1 Course có nhiều CourseClass
+            modelBuilder.Entity<CourseClass>()
+    .HasOne(cc => cc.Course)
+    .WithMany(c => c.Classes)
+    .HasForeignKey(cc => cc.CourseId);
+
+            // 1 CourseClass có nhiều student đăng ký
+            modelBuilder.Entity<StudentCourse>()
+    .HasOne(sc => sc.CourseClass)
+    .WithMany(cc => cc.StudentCourses)
+    .HasForeignKey(sc => sc.CourseClassId);
+
+
+            // q user co nhieu luot dang ki 
+            modelBuilder.Entity<StudentCourse>()
+    .HasOne(sc => sc.User)
+    .WithMany(u => u.StudentCourses)
+    .HasForeignKey(sc => sc.UserId);
+
+            modelBuilder.Entity<PaymentItem>()
+                .HasOne(pi => pi.StudentCourse)
+                .WithMany(sc => sc.PaymentItems)
+                .HasForeignKey(pi => pi.StudentCourseId)
+                .OnDelete(DeleteBehavior.NoAction);
+            // =====================================================
+            // DECIMAL CONFIG
+            // =====================================================
+            modelBuilder.Entity<Course>()
+      .Property(c => c.Price)
+      .HasPrecision(18, 2); 
+            modelBuilder.Entity<CourseClass>()
+                .Property(cc => cc.Price)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<PaymentItem>()
+                .Property(pi => pi.Price)
+                .HasColumnType("decimal(18,2)");
             // 👉 SEED ADMIN
             modelBuilder.Entity<User>().HasData(
                 new User
