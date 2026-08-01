@@ -3,6 +3,7 @@ using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
 using StudentManagementAPI.DTOs.Dashboard;
 using StudentManagementAPI.Enums;
+using StudentManagementAPI.Exceptions;
 using StudentManagementAPI.Services.Interfaces;
 using System;
 using System.Linq;
@@ -35,17 +36,17 @@ namespace StudentManagementAPI.Services.Iplementations
                     await _context.CourseClasses.CountAsync(),
 
                 PendingEnrollments =
-                    await _context.StudentCourses
+                    await _context.Enrollments
                         .CountAsync(sc =>
                             sc.Status == EnrollmentStatus.Pending),
 
                 PaidEnrollments =
-                    await _context.StudentCourses
+                    await _context.Enrollments
                         .CountAsync(sc =>
                             sc.Status == EnrollmentStatus.Paid),
 
                 CompletedEnrollments =
-                    await _context.StudentCourses
+                    await _context.Enrollments
                         .CountAsync(sc =>
                             sc.Status == EnrollmentStatus.Completed),
 
@@ -69,12 +70,12 @@ namespace StudentManagementAPI.Services.Iplementations
                     u.Username == username);
 
             if (user == null)
-                throw new Exception("User không tồn tại");
+                throw new NotFoundException("User không tồn tại");
 
             return new UserDashboardDTO
             {
                 MyCourses =
-       await _context.StudentCourses
+       await _context.Enrollments
            .CountAsync(sc =>
                sc.UserId == user.Id),
 

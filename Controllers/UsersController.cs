@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StudentManagementAPI.DTOs;
+using StudentManagementAPI.DTOs.Courses;
+using StudentManagementAPI.DTOs.Teachers;
 using StudentManagementAPI.Helpers;
 using StudentManagementAPI.Services.Interfaces;
 using System.Security.Claims;
@@ -47,9 +48,7 @@ namespace StudentManagementAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Get(int id)
         {
-            var result =
-                await _userService.GetByIdAsync(id);
-
+            var result = await _userService.GetByIdAsync(id);
             return Ok(
                 new ApiResponse<object>(
                     true,
@@ -59,100 +58,65 @@ namespace StudentManagementAPI.Controllers
             );
         }
 
-        // =====================================================
-        // USER
-        // =====================================================
-
-        // ASSIGN COURSE
-        [HttpPost("assign-course")]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> AssignCourse(
-            AssignCourseDTO dto)
+        [HttpGet("admin/students/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetStudentDetail(int id)
         {
-            var username =
-                User.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized(
-                    new ApiResponse<object>(
-                        false,
-                        "Token không hợp lệ",
-                        null
-                    )
-                );
-
-            await _userService.AssignCourseAsync(
-                username,
-                dto.CourseClassId);
+            var result = await _userService.GetStudentDetailAsync(id);
 
             return Ok(
                 new ApiResponse<object>(
                     true,
-                    "Đăng ký lớp học thành công",
-                    null
-                )
-            );
-        }
-
-        // REMOVE COURSE
-        [HttpDelete("remove-course/{courseClassId}")]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> RemoveCourse(
-            int courseClassId)
-        {
-            var username =
-                User.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized(
-                    new ApiResponse<object>(
-                        false,
-                        "Token không hợp lệ",
-                        null
-                    )
-                );
-
-            await _userService.RemoveCourseAsync(
-                username,
-                courseClassId);
-
-            return Ok(
-                new ApiResponse<object>(
-                    true,
-                    "Hủy đăng ký lớp học thành công",
-                    null
-                )
-            );
-        }
-
-        // GET MY COURSES
-        [HttpGet("my-courses")]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> GetMyCourses()
-        {
-            var username =
-                User.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized(
-                    new ApiResponse<object>(
-                        false,
-                        "Token không hợp lệ",
-                        null
-                    )
-                );
-
-            var result =
-                await _userService.GetMyCoursesAsync(
-                    username);
-
-            return Ok(
-                new ApiResponse<object>(
-                    true,
-                    "Lấy danh sách khóa học thành công",
+                    "Lấy chi tiết học viên thành công",
                     result
                 )
             );
         }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("available-teachers")]
+        public async Task<IActionResult> GetAvailableTeachers()
+        {
+            var result = await _userService.GetAvailableTeachersAsync();
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy danh sách Teacher khả dụng thành công",
+                    result
+                ));
+        }
+
+
+        [HttpPost("teacher-account")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateTeacherAccount(CreateTeacherAccountDTO dto)
+        {
+            var result = await _userService.CreateTeacherAccountAsync(dto);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Tạo tài khoản Teacher thành công",
+                    result
+                )
+            );
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpGet("me/schedule")]
+        public async Task<IActionResult> GetMySchedule()
+        {
+            var username = User.FindFirstValue(ClaimTypes.Name);
+
+            var result = await _userService.GetMyScheduleAsync(username);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy lịch học thành công",
+                    result));
+        }
     }
-}
+ }

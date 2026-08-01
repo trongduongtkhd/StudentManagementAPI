@@ -1,4 +1,4 @@
-﻿namespace StudentManagementAPI.DTOs
+﻿namespace StudentManagementAPI.DTOs.Courses
 {
     public class CourseStatDTO
     {

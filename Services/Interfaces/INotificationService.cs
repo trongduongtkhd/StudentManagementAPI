@@ -17,5 +17,6 @@ namespace StudentManagementAPI.Services.Interfaces
         Task MarkAsReadAsync(
             int notificationId,
             string username);
+        Task<int> GetUnreadCountAsync(string username);
     }
 }

@@ -96,5 +96,20 @@ namespace StudentManagementAPI.Services.Iplementations
 
             await _context.SaveChangesAsync();
         }
+        public async Task<int> GetUnreadCountAsync(
+    string username)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u =>
+                    u.Username == username);
+
+            if (user == null)
+                throw new Exception("User không tồn tại");
+
+            return await _context.Notifications
+                .CountAsync(n =>
+                    n.UserId == user.Id &&
+                    !n.IsRead);
+        }
     }
 }

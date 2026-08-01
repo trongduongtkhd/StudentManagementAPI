@@ -10,8 +10,8 @@ namespace StudentManagementAPI.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseClass> CourseClasses { get; set; }
-        public DbSet<StudentCourse> StudentCourses { get; set; }
-
+        public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<Teacher> Teachers { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
         public DbSet<PaymentItem> PaymentItems { get; set; }
@@ -22,13 +22,8 @@ namespace StudentManagementAPI.Data
             base.OnModelCreating(modelBuilder);
 
             // 👉 Composite key cho bảng many-to-many
-            modelBuilder.Entity<StudentCourse>()
-                .HasIndex(sc => new
-                {
-                    sc.UserId,
-                    sc.CourseClassId
-                })
-                .IsUnique();
+            modelBuilder.Entity<Enrollment>()
+                .ToTable("StudentCourses");
 
             // 1 Course có nhiều CourseClass
             modelBuilder.Entity<CourseClass>()
@@ -37,22 +32,22 @@ namespace StudentManagementAPI.Data
     .HasForeignKey(cc => cc.CourseId);
 
             // 1 CourseClass có nhiều student đăng ký
-            modelBuilder.Entity<StudentCourse>()
+            modelBuilder.Entity<Enrollment>()
     .HasOne(sc => sc.CourseClass)
-    .WithMany(cc => cc.StudentCourses)
+    .WithMany(cc => cc.Enrollments)
     .HasForeignKey(sc => sc.CourseClassId);
 
 
             // q user co nhieu luot dang ki 
-            modelBuilder.Entity<StudentCourse>()
+            modelBuilder.Entity<Enrollment>()
     .HasOne(sc => sc.User)
-    .WithMany(u => u.StudentCourses)
+    .WithMany(u => u.Enrollments)
     .HasForeignKey(sc => sc.UserId);
 
             modelBuilder.Entity<PaymentItem>()
-                .HasOne(pi => pi.StudentCourse)
+                .HasOne(pi => pi.Enrollment)
                 .WithMany(sc => sc.PaymentItems)
-                .HasForeignKey(pi => pi.StudentCourseId)
+                .HasForeignKey(pi => pi.EnrollmentId)
                 .OnDelete(DeleteBehavior.NoAction);
             // =====================================================
             // DECIMAL CONFIG
@@ -71,6 +66,17 @@ namespace StudentManagementAPI.Data
             modelBuilder.Entity<PaymentItem>()
                 .Property(pi => pi.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Teacher>()
+    .HasOne(t => t.User)
+    .WithOne(u => u.Teacher)
+    .HasForeignKey<Teacher>(t => t.UserId);
+
+            modelBuilder.Entity<CourseClass>()
+                .HasOne(cc => cc.Teacher)
+                .WithMany(t => t.CourseClasses)
+                .HasForeignKey(cc => cc.TeacherId)
+                .OnDelete(DeleteBehavior.NoAction);
             // 👉 SEED ADMIN
             modelBuilder.Entity<User>().HasData(
                 new User

@@ -7,7 +7,7 @@ namespace StudentManagementAPI.Models
     public class Payment
     {
         public int Id { get; set; }
-
+        public string PaymentCode { get; set; }
         // USER
         public int UserId { get; set; }
 
@@ -21,7 +21,7 @@ namespace StudentManagementAPI.Models
 
         // CREATED
         public DateTime CreatedAt { get; set; }
-
+        public DateTime? PaidAt { get; set; }
         // PAYMENT ITEMS
         public ICollection<PaymentItem> PaymentItems { get; set; }
             = new List<PaymentItem>();

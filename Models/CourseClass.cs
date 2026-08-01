@@ -6,7 +6,10 @@ namespace StudentManagementAPI.Models
     public class CourseClass
     {
         public int Id { get; set; }
+        // teacher 
+        public int? TeacherId { get; set; }
 
+        public Teacher Teacher { get; set; }
         // FK
         public int CourseId { get; set; }
 
@@ -36,7 +39,7 @@ namespace StudentManagementAPI.Models
         // gia 
         public decimal Price { get; set; }
         // Navigation
-        public ICollection<StudentCourse> StudentCourses { get; set; }
-            = new List<StudentCourse>();
+        public ICollection<Enrollment> Enrollments { get; set; }
+            = new List<Enrollment>();
     }
 }

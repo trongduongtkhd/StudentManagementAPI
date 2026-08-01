@@ -5,6 +5,7 @@ namespace StudentManagementAPI.Models
     public class User
     {
         public int Id { get; set; }
+        public Teacher Teacher { get; set; }
         public string Username { get; set; }
         public string PasswordHash { get; set; }
         public string Role { get; set; } // "Admin" hoặc "User"
@@ -13,7 +14,7 @@ namespace StudentManagementAPI.Models
         public int Age { get; set; }
 
         // 👉 Navigation
-        public ICollection<StudentCourse> StudentCourses { get; set; }
+        public ICollection<Enrollment> Enrollments { get; set; }
 
         // 1 User → nhiều Payments
 

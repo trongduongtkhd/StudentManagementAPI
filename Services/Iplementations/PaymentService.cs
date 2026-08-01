@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using StudentManagementAPI.Exceptions;
 namespace StudentManagementAPI.Services.Iplementations
 {
     public class PaymentService : IPaymentService
@@ -22,9 +22,7 @@ namespace StudentManagementAPI.Services.Iplementations
         }
 
    
-public async Task<PaymentDTO> CreatePaymentAsync(
-    string username,
-    CreatePaymentDTO dto)
+public async Task<PaymentDTO> CreatePaymentAsync(string username, CreatePaymentDTO dto)
         {
             // ================= USER =================
 
@@ -32,16 +30,16 @@ public async Task<PaymentDTO> CreatePaymentAsync(
                 .FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
-                throw new Exception("User không tồn tại");
+                throw new NotFoundException("User không tồn tại");
 
             // ================= VALIDATE INPUT =================
 
             if (dto.CourseClassIds == null || !dto.CourseClassIds.Any())
-                throw new Exception("Danh sách lớp học không hợp lệ");
+                throw new BadRequestException("Danh sách lớp học không hợp lệ");
 
             // ================= GET ENROLLMENTS =================
 
-            var enrollments = await _context.StudentCourses
+            var enrollments = await _context.Enrollments
 
                 .Include(sc => sc.CourseClass)
                     .ThenInclude(cc => cc.Course)
@@ -59,7 +57,7 @@ public async Task<PaymentDTO> CreatePaymentAsync(
             // ================= VALIDATE ENROLLMENTS =================
 
             if (!enrollments.Any())
-                throw new Exception("Không có enrollment pending");
+                throw new BadRequestException("Không có enrollment pending");
 
             // ================= CHECK EXISTED PENDING PAYMENT =================
 
@@ -68,18 +66,19 @@ public async Task<PaymentDTO> CreatePaymentAsync(
                     pi.Payment.Status == PaymentStatus.Pending));
 
             if (hasPendingPayment)
-                throw new Exception(
-                    "Bạn đã có payment pending cho lớp học này");
+                throw new BadRequestException("Bạn đã có payment pending cho lớp học này");
 
             // ================= CREATE PAYMENT =================
 
             var payment = new Payment
             {
                 UserId = user.Id,
-
+                PaymentCode = "PAY-" + Guid.NewGuid().ToString("N"),
                 Status = PaymentStatus.Pending,
 
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                
+
             };
 
             // ================= CREATE PAYMENT ITEMS =================
@@ -88,7 +87,7 @@ public async Task<PaymentDTO> CreatePaymentAsync(
             {
                 payment.PaymentItems.Add(new PaymentItem
                 {
-                    StudentCourseId = enrollment.Id,
+                    EnrollmentId = enrollment.Id,
 
                     Price = enrollment.CourseClass.Price
                 });
@@ -133,21 +132,19 @@ public async Task<PaymentDTO> CreatePaymentAsync(
         }
 
 
-        public async Task<bool> PayAsync(
-            int paymentId,
-            string username)
+        public async Task<bool> PayAsync(int paymentId, string username)
         {
             // ================= USER =================
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
-                throw new Exception("User không tồn tại");
+                throw new NotFoundException("User không tồn tại");
 
             // ================= PAYMENT =================
             var payment = await _context.Payments
                 .Include(p => p.PaymentItems)
-                    .ThenInclude(pi => pi.StudentCourse)
+                    .ThenInclude(pi => pi.Enrollment)
                         .ThenInclude(sc => sc.CourseClass)
                             .ThenInclude(cc => cc.Course)
                 .FirstOrDefaultAsync(p =>
@@ -155,36 +152,30 @@ public async Task<PaymentDTO> CreatePaymentAsync(
                     p.UserId == user.Id);
 
             if (payment == null)
-                throw new Exception("Payment không tồn tại");
+                throw new NotFoundException("Payment không tồn tại");
 
             // ================= CHECK STATUS =================
             if (payment.Status == PaymentStatus.Paid)
-                throw new Exception("Payment đã thanh toán");
+                throw new BadRequestException("Payment đã thanh toán");
 
             // ================= UPDATE PAYMENT =================
             payment.Status = PaymentStatus.Paid;
-
+            payment.PaidAt = DateTime.UtcNow;
             // ================= ACTIVATE ENROLLMENTS =================
             foreach (var item in payment.PaymentItems)
             {
-                var enrollment = await _context.StudentCourses
-                    .FirstOrDefaultAsync(sc =>
-                        sc.Id == item.StudentCourseId);
 
-                if (enrollment != null)
-                {
-                    // PAID
-                    enrollment.Status = EnrollmentStatus.Paid;
+                var enrollment = item.Enrollment;
 
-                    // NOTIFICATION
-                    await _notificationService.CreateAsync(
-                        user.Id,
-                        "Thanh toán thành công",
-                        $"Bạn đã thanh toán thành công lớp " +
-                        $"{item.StudentCourse.CourseClass.Course.Name} - " +
-                        $"{item.StudentCourse.CourseClass.ClassName}"
-                    );
-                }
+
+                enrollment.Status = EnrollmentStatus.Paid;
+
+
+                await _notificationService.CreateAsync(
+                    user.Id,
+                    "Thanh toán thành công",
+                    $"Bạn đã thanh toán lớp {enrollment.CourseClass.Course.Name}"
+                );
             }
 
             // ================= SAVE =================
@@ -192,18 +183,13 @@ public async Task<PaymentDTO> CreatePaymentAsync(
             return true;
         }
 
-public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(
-    string username)
+public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(string username)
         {
             // ================= USER =================
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u =>
-                    u.Username == username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
-            if (user == null)
-                throw new Exception("User không tồn tại");
-
+            if (user == null) throw new NotFoundException("User không tồn tại");
             // ================= GET PAYMENTS =================
 
             return await _context.Payments
@@ -211,7 +197,7 @@ public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(
                 .Where(p => p.UserId == user.Id)
 
                 .Include(p => p.PaymentItems)
-                    .ThenInclude(pi => pi.StudentCourse)
+                    .ThenInclude(pi => pi.Enrollment)
                         .ThenInclude(sc => sc.CourseClass)
                             .ThenInclude(cc => cc.Course)
 
@@ -230,26 +216,15 @@ public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(
                     Items = p.PaymentItems
                         .Select(pi => new PaymentItemDTO
                         {
-                            CourseClassId =
-                                pi.StudentCourse.CourseClassId,
+                            CourseClassId = pi.Enrollment.CourseClassId,
 
-                            CourseName =
-                                pi.StudentCourse
-                                    .CourseClass
-                                    .Course
-                                    .Name,
+                            CourseName = pi.Enrollment.CourseClass.Course.Name,
 
-                            ClassName =
-                                pi.StudentCourse
-                                    .CourseClass
-                                    .ClassName,
-
+                            ClassName = pi.Enrollment.CourseClass.ClassName,
                             Price = pi.Price
                         })
                         .ToList()
-                })
-
-                .ToListAsync();
+                }).ToListAsync();
         }
         public async Task<IEnumerable<PaymentDTO>> GetAllPaymentsAsync()
         {
@@ -258,7 +233,7 @@ public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(
                 .Include(p => p.User)
 
                 .Include(p => p.PaymentItems)
-                    .ThenInclude(pi => pi.StudentCourse)
+                    .ThenInclude(pi => pi.Enrollment)
                         .ThenInclude(sc => sc.CourseClass)
                             .ThenInclude(cc => cc.Course)
 
@@ -280,16 +255,16 @@ public async Task<IEnumerable<PaymentDTO>> GetMyPaymentsAsync(
                         .Select(pi => new PaymentItemDTO
                         {
                             CourseClassId =
-                                pi.StudentCourse.CourseClassId,
+                                pi.Enrollment.CourseClassId,
 
                             CourseName =
-                                pi.StudentCourse
+                                pi.Enrollment
                                     .CourseClass
                                     .Course
                                     .Name,
 
                             ClassName =
-                                pi.StudentCourse
+                                pi.Enrollment
                                     .CourseClass
                                     .ClassName,
 

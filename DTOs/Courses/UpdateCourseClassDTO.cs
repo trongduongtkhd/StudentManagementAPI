@@ -1,17 +1,15 @@
 ﻿using System;
 
-namespace StudentManagementAPI.DTOs
+namespace StudentManagementAPI.DTOs.Courses
 {
-    public class CreateCourseClassDTO
+    public class UpdateCourseClassDTO
     {
-        public int CourseId { get; set; }
-
         public string ClassName { get; set; }
-
+        public int? TeacherId { get; set; }
         public DayOfWeek DayOfWeek { get; set; }
 
         public DateTime StartDate { get; set; }
-        public int MaxStudents { get; set; }
+
         public DateTime EndDate { get; set; }
 
         public TimeSpan StartTime { get; set; }
@@ -19,5 +17,7 @@ namespace StudentManagementAPI.DTOs
         public TimeSpan EndTime { get; set; }
 
         public string Session { get; set; }
+
+        public int MaxStudents { get; set; }
     }
 }

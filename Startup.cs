@@ -61,9 +61,12 @@ namespace StudentManagementAPI
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICourseService, CourseService>();
+            services.AddScoped<ITeacherService, TeacherService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IEnrollmentService, EnrollmentService>();
+            services.AddScoped<ICourseClasses, CourseClassService>();
             var key = Encoding.UTF8.GetBytes("THIS_IS_MY_SUPER_SECRET_KEY_123456789_ABC");
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -122,7 +125,8 @@ namespace StudentManagementAPI
             }
 
             //app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
+            app.UseMiddleware<ExceptionMiddleware>();
+            app.UseCors("AllowAll");      
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

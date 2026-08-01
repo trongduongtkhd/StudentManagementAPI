@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace StudentManagementAPI.DTOs
+namespace StudentManagementAPI.DTOs.Courses
 {
     public class AssignCourseDTO
     {

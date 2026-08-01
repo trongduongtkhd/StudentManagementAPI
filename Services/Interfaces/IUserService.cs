@@ -1,20 +1,24 @@
 ﻿using StudentManagementAPI.DTOs;
+using StudentManagementAPI.DTOs.Admin;
+using StudentManagementAPI.DTOs.Courses;
+using StudentManagementAPI.DTOs.Schedule;
+using StudentManagementAPI.DTOs.Students;
+using StudentManagementAPI.DTOs.Teachers;
+using StudentManagementAPI.DTOs.Users;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
 namespace StudentManagementAPI.Services.Interfaces
 {
     public interface IUserService
     {
         // 👉 Admin dùng
         Task<IEnumerable<UserDTO>> GetAllStudentsAsync();
-        Task<UserDTO> GetByIdAsync(int id);
+        Task<StudentDetailDTO> GetByIdAsync(int id);
+        Task<AdminStudentDetailDTO> GetStudentDetailAsync(int id);
 
-        // 👉 User dùng (JWT)
-        Task AssignCourseAsync(string username, int courseClassId);
-        Task RemoveCourseAsync(string username, int courseClassId);
-
-        // 👉 Lấy course của chính user
-        Task<IEnumerable<CourseClassDTO>> GetMyCoursesAsync(string username);
+        Task<IEnumerable<AvailableTeacherDTO>> GetAvailableTeachersAsync();
+        Task<TeacherAccountDTO> CreateTeacherAccountAsync(CreateTeacherAccountDTO dto);
+        //Calendar
+        Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username);
     }
 }

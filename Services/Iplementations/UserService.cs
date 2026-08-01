@@ -1,7 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
+using StudentManagementAPI.DTOs.Admin;
+using StudentManagementAPI.DTOs.Courses;
+using StudentManagementAPI.DTOs.Schedule;
+using StudentManagementAPI.DTOs.Students;
+using StudentManagementAPI.DTOs.Teachers;
+using StudentManagementAPI.DTOs.Users;
 using StudentManagementAPI.Enums;
+using StudentManagementAPI.Exceptions;
 using StudentManagementAPI.Models;
 using StudentManagementAPI.Services.Interfaces;
 using System;
@@ -25,7 +32,7 @@ namespace StudentManagementAPI.Services.Iplementations
         {
             return await _context.Users
             .Where(u => u.Role == "User")
-            .Include(u => u.StudentCourses)
+            .Include(u => u.Enrollments)
                 .ThenInclude(sc => sc.CourseClass)
                     .ThenInclude(cc => cc.Course)
             .Select(u => new UserDTO
@@ -33,7 +40,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 Id = u.Id,
                 Name = u.Name,
                 Age = u.Age,
-                Courses = u.StudentCourses
+                Courses = u.Enrollments
                     .Select(sc => sc.CourseClass.Course.Name)
                     .ToList()
             })
@@ -41,210 +48,258 @@ namespace StudentManagementAPI.Services.Iplementations
         }
 
         // 👉 ADMIN: lấy theo ID
-        public async Task<UserDTO> GetByIdAsync(int id)
+        public async Task<StudentDetailDTO> GetByIdAsync(int id)
         {
             var user = await _context.Users
-                .Include(u => u.StudentCourses)
-                    .ThenInclude(sc => sc.CourseClass)
-                        .ThenInclude(cc => cc.Course)
-                .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) return null;
+         .Include(u => u.Enrollments)
 
-            return new UserDTO
+             .ThenInclude(e => e.CourseClass)
+
+                 .ThenInclude(c => c.Course)
+
+         .Include(u => u.Enrollments)
+
+             .ThenInclude(e => e.PaymentItems)
+
+                 .ThenInclude(p => p.Payment)
+
+         .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+                throw new NotFoundException("Student không tồn tại");
+            return new StudentDetailDTO
             {
                 Id = user.Id,
+
+                Username = user.Username,
+
                 Name = user.Name,
+
                 Age = user.Age,
 
-                Courses = user.StudentCourses
-                    .Select(sc => sc.CourseClass.Course.Name)
-                    .ToList()
+                Role = user.Role.ToString(),
+
+                TotalEnrollments = user.Enrollments.Count,
+
+                ActiveEnrollments = user.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled),
+
+                Enrollments = user.Enrollments.Select(e =>
+                {
+                    var payment = e.PaymentItems.OrderByDescending(p => p.Payment.CreatedAt).FirstOrDefault();
+                    return new StudentEnrollmentDTO
+                    {
+                        EnrollmentId = e.Id,
+
+                        CourseName = e.CourseClass.Course.Name,
+
+                        ClassName = e.CourseClass.ClassName,
+
+                        Status = e.Status.ToString(),
+
+                        EnrolledAt = e.EnrolledAt,
+
+                        PaymentStatus =
+                            payment?.Payment.Status.ToString() ?? "Pending",
+
+                        Amount = payment?.Price ?? 0,
+
+                        PaidAt = payment?.Payment.PaidAt
+                    };
+                }).ToList()
             };
         }
 
-        // 👉 USER: chọn course (JWT)
-        public async Task AssignCourseAsync(string username, int courseClassId)
+        public async Task<AdminStudentDetailDTO> GetStudentDetailAsync(int id)
         {
-            // ================= USER =================
-            var user = await _context.Users
-                .Include(u => u.StudentCourses)
-                    .ThenInclude(sc => sc.CourseClass)
-                .FirstOrDefaultAsync(u => u.Username == username);
 
-            if (user == null)
-                throw new Exception("User không tồn tại");
+            var student = await _context.Users
 
-            // ================= CLASS =================
-            var selectedClass = await _context.CourseClasses
-                .Include(cc => cc.Course)
-                .FirstOrDefaultAsync(cc => cc.Id == courseClassId);
+                .Include(u => u.Enrollments)
 
-            if (selectedClass == null)
-                throw new Exception("Lớp học không tồn tại");
+                    .ThenInclude(e => e.CourseClass)
 
-            // ================= CHECK CLASS FULL =================
-            var currentStudents = await _context.StudentCourses
-                .CountAsync(sc =>
-                    sc.CourseClassId == courseClassId &&
-                    sc.Status != EnrollmentStatus.Cancelled);
-
-            if (currentStudents >= selectedClass.MaxStudents)
-                throw new Exception("Lớp học đã đầy");
-
-            // ================= CHECK ALREADY ENROLLED =================
-            var alreadyEnrolled = await _context.StudentCourses
-                .AnyAsync(sc =>
-                    sc.UserId == user.Id &&
-                    sc.CourseClassId == courseClassId &&
-                    sc.Status != EnrollmentStatus.Cancelled);
-
-            if (alreadyEnrolled)
-                throw new Exception("Bạn đã đăng ký lớp này");
-
-            // ================= CHECK SAME COURSE =================
-            var sameCourse = user.StudentCourses
-                .Any(sc =>
-                    sc.CourseClass.CourseId == selectedClass.CourseId &&
-                    sc.Status != EnrollmentStatus.Cancelled);
-
-            if (sameCourse)
-                throw new Exception("Bạn đã đăng ký khóa học này rồi");
-
-            // ================= CHECK SCHEDULE CONFLICT =================
-            var hasConflict = user.StudentCourses.Any(sc =>
-
-                // Ignore cancelled
-                sc.Status != EnrollmentStatus.Cancelled
-
-                // Same day
-                && sc.CourseClass.DayOfWeek == selectedClass.DayOfWeek
-
-                // Time overlap
-                && sc.CourseClass.StartTime < selectedClass.EndTime
-                && selectedClass.StartTime < sc.CourseClass.EndTime
-
-                // Date overlap
-                && sc.CourseClass.StartDate <= selectedClass.EndDate
-                && selectedClass.StartDate <= sc.CourseClass.EndDate
-            );
-
-            if (hasConflict)
-                throw new Exception("Lịch học bị trùng giờ");
-
-            // ================= ENROLL =================
-            var studentCourse = new StudentCourse
-            {
-                UserId = user.Id,
-
-                CourseClassId = courseClassId,
-
-                Status = EnrollmentStatus.Pending,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.StudentCourses.Add(studentCourse);
-
-            await _context.SaveChangesAsync();
-        }
-
-
-
-        // 👉 USER: bỏ course
-        public async Task RemoveCourseAsync(string username, int courseClassId)
-        {
-            Console.WriteLine("===== REMOVE COURSE DEBUG =====");
-
-            Console.WriteLine($"Username: {username}");
-
-            Console.WriteLine($"CourseClassId from frontend: {courseClassId}");
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == username);
-
-            if (user == null)
-                throw new Exception("User không tồn tại");
-
-            Console.WriteLine($"UserId: {user.Id}");
-
-            var allEnrollments = await _context.StudentCourses
-                .Where(sc => sc.UserId == user.Id)
-                .ToListAsync();
-
-            Console.WriteLine($"Total Enrollments: {allEnrollments.Count}");
-
-            foreach (var enrollment in allEnrollments)
-            {
-                Console.WriteLine(
-                   
-                    $"CourseClassId: {enrollment.CourseClassId} | " +
-                    $"Status: {enrollment.Status}");
-            }
-
-            var studentCourse = await _context.StudentCourses
-                .FirstOrDefaultAsync(sc =>
-                    sc.UserId == user.Id &&
-                    sc.CourseClassId == courseClassId);
-
-            Console.WriteLine($"studentCourse == null : {studentCourse == null}");
-
-            if (studentCourse == null)
-                throw new Exception("Bạn chưa đăng ký lớp này");
-
-            _context.StudentCourses.Remove(studentCourse);
-
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine("REMOVE SUCCESS");
-        }
-
-        // 👉 USER: lấy course của chính mình
-        public async Task<IEnumerable<CourseClassDTO>> GetMyCoursesAsync(string username)
-        {
-            var user = await _context.Users
-                .Include(u => u.StudentCourses)
-                    .ThenInclude(sc => sc.CourseClass)
                         .ThenInclude(cc => cc.Course)
 
-                          .Include(u => u.StudentCourses)
-        .ThenInclude(sc => sc.PaymentItems)
-            .ThenInclude(pi => pi.Payment)
+                .Include(u => u.Enrollments)
+
+                    .ThenInclude(e => e.CourseClass)
+
+                        .ThenInclude(cc => cc.Teacher)
+
+                            .ThenInclude(t => t.User)
+
+                .Include(u => u.Enrollments)
+
+                    .ThenInclude(e => e.PaymentItems)
+
+                        .ThenInclude(pi => pi.Payment)
+
+                .FirstOrDefaultAsync(u =>
+                    u.Id == id &&
+                    u.Role == "User");
+
+            if (student == null) throw new NotFoundException("Student không tồn tại");
+
+            return new AdminStudentDetailDTO
+            {
+
+                Id = student.Id,
+
+                Username = student.Username,
+
+                Name = student.Name,
+
+                Age = student.Age,
+
+                TotalCourses = student.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled),
+
+                Enrollments = student.Enrollments.Select(e => new AdminStudentEnrollmentDTO
+                {
+
+                    EnrollmentId = e.Id,
+
+                    CourseName = e.CourseClass.Course.Name,
+
+                    ClassName = e.CourseClass.ClassName,
+
+                    TeacherName = e.CourseClass.Teacher != null ? e.CourseClass.Teacher.User.Name : "Chưa phân công",
+
+                    EnrollmentStatus = e.Status.ToString(),
+
+                    PaymentStatus = e.PaymentItems
+
+                        .OrderByDescending(pi => pi.Payment.CreatedAt)
+
+                        .Select(pi => pi.Payment.Status.ToString()).FirstOrDefault() ?? "Pending",
+                     
+                    Price = e.CourseClass.Price,
+
+                    EnrolledAt = e.EnrolledAt
+
+                }).ToList()
+            };
+
+        }
+
+        public async Task<IEnumerable<AvailableTeacherDTO>> GetAvailableTeachersAsync()
+        {
+            return await _context.Users
+
+                .Where(u => u.Role == "Teacher")
+
+                .Where(u => !_context.Teachers.Any(t => t.UserId == u.Id))
+
+                .Select(u => new AvailableTeacherDTO
+                {
+                    UserId = u.Id,
+
+                    Username = u.Username,
+
+                    Name = u.Name
+                }).ToListAsync();
+        }
+
+
+        public async Task<TeacherAccountDTO> CreateTeacherAccountAsync(CreateTeacherAccountDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Username))
+                throw new BadRequestException("Username không được để trống");
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                throw new BadRequestException("Password không được để trống");
+
+            if (dto.Password.Length < 6)
+                throw new BadRequestException("Password phải từ 6 ký tự");
+
+            var exists = await _context.Users
+                .AnyAsync(x => x.Username == dto.Username);
+
+            if (exists)
+                throw new BadRequestException("Username đã tồn tại");
+
+            var user = new User
+            {
+                Username = dto.Username,
+
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+
+                Name = dto.Name,
+
+                Age = dto.Age,
+
+                Role = "Teacher"
+            };
+
+            _context.Users.Add(user);
+
+            await _context.SaveChangesAsync();
+            return new TeacherAccountDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Age = user.Age,
+                Role = user.Role
+            };
+        }
+
+        public async Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username)
+        {
+            var student = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == username);
 
-            if (user == null)
-                throw new System.Exception("User không tồn tại");
+            if (student == null)
+                throw new NotFoundException("Student không tồn tại");
 
-            return user.StudentCourses
-                .Select(sc => new CourseClassDTO
-                {
-                    Id = sc.CourseClass.Id,
+            var enrollments = await _context.Enrollments
 
-                    CourseId = sc.CourseClass.CourseId,
+              .Where(e =>
+                 e.UserId == student.Id &&
+                 e.Status != EnrollmentStatus.Cancelled)
 
-                    CourseName = sc.CourseClass.Course.Name,
+              .Include(e => e.CourseClass)
+               .ThenInclude(c => c.Course)
 
-                    ClassName = sc.CourseClass.ClassName,
-                    Price = sc.CourseClass.Course.Price,
-                    Status = sc.Status.ToString(),
-                    PaymentStatus =
-    sc.PaymentItems
-        .OrderByDescending(pi => pi.Payment.CreatedAt)
-        .Select(pi => pi.Payment.Status.ToString())
-        .FirstOrDefault() ?? "Pending",
-                    DayOfWeek = sc.CourseClass.DayOfWeek,
+              .Include(e => e.CourseClass)
+                .ThenInclude(c => c.Teacher)
+             .ThenInclude(t => t.User)
 
-                    StartDate = sc.CourseClass.StartDate,
+             .Include(e => e.CourseClass)
+              .ThenInclude(c => c.Enrollments)
 
-                    EndDate = sc.CourseClass.EndDate,
+            .ToListAsync();
 
-                    StartTime = sc.CourseClass.StartTime,
+            return enrollments.Select(e => new ScheduleDTO
+            {
+                CourseClassId = e.CourseClass.Id,
 
-                    EndTime = sc.CourseClass.EndTime,
+                CourseName = e.CourseClass.Course.Name,
 
-                    Session = sc.CourseClass.Session
-                })
-                .ToList();
+                ClassName = e.CourseClass.ClassName,
+
+                TeacherId = e.CourseClass.TeacherId ?? 0,
+
+                TeacherName =
+                    e.CourseClass.Teacher?.User?.Name ?? "Chưa phân công",
+
+                DayOfWeek = e.CourseClass.DayOfWeek,
+
+                StartTime = e.CourseClass.StartTime,
+
+                EndTime = e.CourseClass.EndTime,
+
+                StartDate = e.CourseClass.StartDate,
+
+                EndDate = e.CourseClass.EndDate,
+
+                CurrentStudents =
+                    e.CourseClass.Enrollments.Count(x =>
+                        x.Status != EnrollmentStatus.Cancelled),
+
+                MaxStudents = e.CourseClass.MaxStudents
+            });
         }
+
     }
 }

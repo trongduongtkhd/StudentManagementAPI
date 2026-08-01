@@ -9,8 +9,8 @@
 
         public Payment Payment { get; set; }
         // Enrollment 
-        public int StudentCourseId { get; set; }
-        public StudentCourse StudentCourse { get; set; }
+        public int EnrollmentId { get; set; }
+        public Enrollment Enrollment { get; set; }
 
         // PRICE
         public decimal Price { get; set; }

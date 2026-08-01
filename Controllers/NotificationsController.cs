@@ -55,5 +55,22 @@ namespace StudentManagementAPI.Controllers
                 )
             );
         }
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount()
+        {
+            var username =
+                User.FindFirstValue(ClaimTypes.Name);
+
+            var count = await _notificationService
+                .GetUnreadCountAsync(username);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy số thông báo chưa đọc thành công",
+                    count
+                )
+            );
+        }
     }
 }
