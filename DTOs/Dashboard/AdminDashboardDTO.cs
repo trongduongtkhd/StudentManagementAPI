@@ -10,7 +10,7 @@
 
         public int PendingEnrollments { get; set; }
 
-        public int PaidEnrollments { get; set; }
+        public int ActiveEnrollments { get; set; }
 
         public int CompletedEnrollments { get; set; }
 

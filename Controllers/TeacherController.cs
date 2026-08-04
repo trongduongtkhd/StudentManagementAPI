@@ -182,7 +182,7 @@ namespace StudentManagementAPI.Controllers
         }
 
         [Authorize(Roles = "Teacher")]
-        [HttpGet("me")]
+        [HttpGet("me/profile")]
         public async Task<IActionResult> GetProfile()
         {
             var username = User.FindFirstValue(ClaimTypes.Name);
@@ -192,9 +192,25 @@ namespace StudentManagementAPI.Controllers
             return Ok(
                 new ApiResponse<object>(
                     true,
-                    "Lấy profile thành công",
+                    "Lấy profile giáo viên thành công",
                     result
                 ));
+        }
+
+        [Authorize(Roles = "Teacher")]
+        [HttpPut("me/profile")]
+        public async Task<IActionResult> UpdateProfile(UpdateTeacherProfileDTO dto)
+        {
+            var username = User.FindFirstValue(ClaimTypes.Name);
+
+            await _teacherService.UpdateProfileAsync(username, dto);
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Cập nhật profile thành công",
+                    null
+                )
+            );
         }
 
         [Authorize(Roles = "Teacher")]

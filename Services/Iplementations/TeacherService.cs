@@ -53,8 +53,7 @@ namespace StudentManagementAPI.Services.Iplementations
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
 
                     Name = dto.Name,
-
-                    Age = dto.Age,
+                    JoinDate = DateTime.Now,
 
                     Role = "Teacher"
                 };
@@ -69,8 +68,6 @@ namespace StudentManagementAPI.Services.Iplementations
 
                     Specialization = dto.Specialization,
 
-                    Bio = dto.Bio,
-
                     YearsOfExperience = dto.YearsOfExperience,
 
                     IsActive = true,
@@ -81,11 +78,15 @@ namespace StudentManagementAPI.Services.Iplementations
                 _context.Teachers.Add(teacher);
 
                 await _context.SaveChangesAsync();
+                teacher.TeacherCode = $"GV{teacher.Id:D4}";
+
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
                 return new TeacherDTO
                 {
                     Id = teacher.Id,
+                    TeacherCode = teacher.TeacherCode,
 
                     UserId = user.Id,
 
@@ -115,7 +116,7 @@ namespace StudentManagementAPI.Services.Iplementations
             return teachers.Select(t => new TeacherDTO
             {
                 Id = t.Id,
-
+                TeacherCode = t.TeacherCode,
                 UserId = t.UserId,
 
                 Username = t.User.Username,
@@ -154,6 +155,7 @@ namespace StudentManagementAPI.Services.Iplementations
             return new TeacherDetailDTO
             {
                 Id = teacher.Id,
+                TeacherCode = teacher.TeacherCode,
                 UserId = teacher.UserId,
                 Username = teacher.User.Username,
                 Name = teacher.User.Name,
@@ -494,24 +496,116 @@ namespace StudentManagementAPI.Services.Iplementations
 
             return new TeacherProfileDTO
             {
-                Id = teacher.Id,
-
                 UserId = teacher.UserId,
+
+                TeacherCode = teacher.TeacherCode,
 
                 Username = teacher.User.Username,
 
                 Name = teacher.User.Name,
 
-                Specialization = teacher.Specialization,
+                Email = teacher.User.Email,
 
-                Bio = teacher.Bio,
+                Phone = teacher.User.Phone,
 
-                YearsOfExperience = teacher.YearsOfExperience,
+                Address = teacher.User.Address,
+
+                Gender = teacher.User.Gender,
+
+                DateOfBirth = teacher.User.DateOfBirth,
+
+                JoinDate = teacher.User.JoinDate,
 
                 IsActive = teacher.IsActive,
 
-                CreatedAt = teacher.CreatedAt
+                Specialization = teacher.Specialization,
+
+                YearsOfExperience = teacher.YearsOfExperience,
+
+                Bio = teacher.Bio
             };
+        }
+
+
+        public async Task UpdateProfileAsync(string username, UpdateTeacherProfileDTO dto)
+        {
+            var teacher = await _context.Teachers
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.User.Username == username);
+
+            if (teacher == null)
+                throw new NotFoundException("Teacher không tồn tại");
+
+
+            // Validate Email
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+            {
+                try
+                {
+                    var email = new System.Net.Mail.MailAddress(dto.Email);
+
+                    if (email.Address != dto.Email)
+                        throw new BadRequestException("Email không hợp lệ");
+                }
+                catch
+                {
+                    throw new BadRequestException("Email không hợp lệ");
+                }
+            }
+
+            // Validate Phone
+            if (!string.IsNullOrWhiteSpace(dto.Phone))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Phone, @"^[0-9]{10,11}$"))
+                    throw new BadRequestException("Số điện thoại không hợp lệ");
+            }
+
+            // Validate DOB
+            if (dto.DateOfBirth.HasValue)
+            {
+                if (dto.DateOfBirth > DateTime.Today)
+                    throw new BadRequestException("Ngày sinh không hợp lệ");
+
+                var age = DateTime.Today.Year - dto.DateOfBirth.Value.Year;
+
+                if (dto.DateOfBirth.Value.Date > DateTime.Today.AddYears(-age))
+                    age--;
+
+                if (age < 18)
+                    throw new BadRequestException("Giáo viên phải từ 18 tuổi");
+            }
+
+            // Validate Gender
+            if (!string.IsNullOrWhiteSpace(dto.Gender))
+            {
+                var genders = new[] { "Male", "Female", "Other" };
+
+                if (!genders.Contains(dto.Gender))
+                    throw new BadRequestException("Gender không hợp lệ");
+            }
+
+            // Validate Address
+            if (!string.IsNullOrWhiteSpace(dto.Address))
+            {
+                if (dto.Address.Length > 255)
+                    throw new BadRequestException("Địa chỉ tối đa 255 ký tự");
+            }
+
+            // Validate Bio
+            if (!string.IsNullOrWhiteSpace(dto.Bio))
+            {
+                if (dto.Bio.Length > 500)
+                    throw new BadRequestException("Bio tối đa 500 ký tự");
+            }
+            teacher.User.Email = dto.Email;
+            teacher.User.Phone = dto.Phone;
+            teacher.User.Address = dto.Address;
+            teacher.User.Gender = dto.Gender;
+            teacher.User.DateOfBirth = dto.DateOfBirth;
+
+            teacher.Bio = dto.Bio;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username)

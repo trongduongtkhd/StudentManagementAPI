@@ -2,9 +2,7 @@
 using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
 using StudentManagementAPI.DTOs.Admin;
-using StudentManagementAPI.DTOs.Courses;
 using StudentManagementAPI.DTOs.Schedule;
-using StudentManagementAPI.DTOs.Students;
 using StudentManagementAPI.DTOs.Teachers;
 using StudentManagementAPI.DTOs.Users;
 using StudentManagementAPI.Enums;
@@ -31,82 +29,52 @@ namespace StudentManagementAPI.Services.Iplementations
         public async Task<IEnumerable<UserDTO>> GetAllStudentsAsync()
         {
             return await _context.Users
-            .Where(u => u.Role == "User")
-            .Include(u => u.Enrollments)
-                .ThenInclude(sc => sc.CourseClass)
-                    .ThenInclude(cc => cc.Course)
-            .Select(u => new UserDTO
-            {
-                Id = u.Id,
-                Name = u.Name,
-                Age = u.Age,
-                Courses = u.Enrollments
-                    .Select(sc => sc.CourseClass.Course.Name)
-                    .ToList()
-            })
-            .ToListAsync();
+                .Where(u => u.Role == "User")
+                .Select(u => new UserDTO
+                {
+                    Id = u.Id,
+
+                    StudentCode = u.StudentCode,
+
+                    Name = u.Name,
+
+                    IsActive = u.IsActive
+                })
+                .ToListAsync();
         }
 
         // 👉 ADMIN: lấy theo ID
-        public async Task<StudentDetailDTO> GetByIdAsync(int id)
+        public async Task<UserProfileDTO> GetByIdAsync(int id)
         {
             var user = await _context.Users
-
-         .Include(u => u.Enrollments)
-
-             .ThenInclude(e => e.CourseClass)
-
-                 .ThenInclude(c => c.Course)
-
-         .Include(u => u.Enrollments)
-
-             .ThenInclude(e => e.PaymentItems)
-
-                 .ThenInclude(p => p.Payment)
-
-         .FirstOrDefaultAsync(u => u.Id == id);
+                .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null)
                 throw new NotFoundException("Student không tồn tại");
-            return new StudentDetailDTO
+
+            return new UserProfileDTO
             {
                 Id = user.Id,
+
+                StudentCode = user.StudentCode,
 
                 Username = user.Username,
 
                 Name = user.Name,
 
-                Age = user.Age,
+                Email = user.Email,
 
-                Role = user.Role.ToString(),
+                Phone = user.Phone,
 
-                TotalEnrollments = user.Enrollments.Count,
+                Address = user.Address,
 
-                ActiveEnrollments = user.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled),
+                DateOfBirth = user.DateOfBirth,
 
-                Enrollments = user.Enrollments.Select(e =>
-                {
-                    var payment = e.PaymentItems.OrderByDescending(p => p.Payment.CreatedAt).FirstOrDefault();
-                    return new StudentEnrollmentDTO
-                    {
-                        EnrollmentId = e.Id,
+                Gender = user.Gender,
 
-                        CourseName = e.CourseClass.Course.Name,
+                JoinDate = user.JoinDate,
 
-                        ClassName = e.CourseClass.ClassName,
-
-                        Status = e.Status.ToString(),
-
-                        EnrolledAt = e.EnrolledAt,
-
-                        PaymentStatus =
-                            payment?.Payment.Status.ToString() ?? "Pending",
-
-                        Amount = payment?.Price ?? 0,
-
-                        PaidAt = payment?.Payment.PaidAt
-                    };
-                }).ToList()
+                IsActive = user.IsActive
             };
         }
 
@@ -299,6 +267,60 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 MaxStudents = e.CourseClass.MaxStudents
             });
+        }
+
+        // Profile 
+        public async Task<UserProfileDTO> GetProfileAsync(string username)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Username == username);
+            if (user == null)
+                throw new NotFoundException("User không tồn tại");
+
+            return new UserProfileDTO
+            {
+                Id = user.Id,
+
+                StudentCode = user.StudentCode,
+
+                Username = user.Username,
+
+                Name = user.Name,
+
+                Email = user.Email,
+
+                Phone= user.Phone,
+
+                Address = user.Address,
+
+                DateOfBirth = user.DateOfBirth,
+
+                Gender = user.Gender,
+
+                JoinDate = user.JoinDate,
+
+                IsActive = user.IsActive
+            };
+        }
+
+        public async Task UpdateProfileAsync(string username, UpdateUserProfileDTO dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Username == username);
+
+            if (user == null) throw new NotFoundException("User không tồn tại");
+
+            user.Name = dto.Name;
+
+            user.Email = dto.Email;
+
+            user.Phone = dto.Phone;
+
+            user.Address = dto.Address;
+
+            user.DateOfBirth = dto.DateOfBirth;
+
+            user.Gender = dto.Gender;
+
+            await _context.SaveChangesAsync();
         }
 
     }

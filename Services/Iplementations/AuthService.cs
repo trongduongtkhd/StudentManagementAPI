@@ -1,29 +1,30 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using StudentManagementAPI.Data;
-using StudentManagementAPI.DTOs;
-using StudentManagementAPI.Models;
-using StudentManagementAPI.Services.Interfaces;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
-using BCrypt.Net;
+﻿using BCrypt.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens;
 using StudentManagementAPI.Data;
+using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
+using StudentManagementAPI.DTOs;
+using StudentManagementAPI.Middleware;
 using StudentManagementAPI.Models;
+using StudentManagementAPI.Models;
+using StudentManagementAPI.Services.Interfaces;
+using System;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
+using System.Text;
+using System.Threading.Tasks;
 namespace StudentManagementAPI.Services.Iplementations
 {
     public class AuthService : IAuthService
@@ -57,10 +58,15 @@ namespace StudentManagementAPI.Services.Iplementations
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "User",
                 Name = dto.Name,
-                Age = dto.Age
+                JoinDate = DateTime.Now,
+                IsActive = true
             };
 
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            // sinh mã học viên
+            user.StudentCode = $"ST{user.Id:D5}";
+
             await _context.SaveChangesAsync();
 
             return "Đăng ký thành công";
@@ -72,7 +78,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 .FirstOrDefaultAsync(x => x.Username == dto.Username);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                throw new Exception("Sai tài khoản hoặc mật khẩu");
+                throw new UnauthorizedException("Sai tài khoản hoặc mật khẩu");
 
             var token = GenerateToken(user);
 

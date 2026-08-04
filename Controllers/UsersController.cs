@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using StudentManagementAPI.DTOs.Courses;
 using StudentManagementAPI.DTOs.Teachers;
+using StudentManagementAPI.DTOs.Users;
 using StudentManagementAPI.Helpers;
 using StudentManagementAPI.Services.Interfaces;
 using System.Security.Claims;
@@ -118,5 +119,34 @@ namespace StudentManagementAPI.Controllers
                     "Lấy lịch học thành công",
                     result));
         }
+
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var username = User.FindFirstValue(ClaimTypes.Name);
+
+            var result = await _userService.GetProfileAsync(username);
+
+            return Ok(
+                new ApiResponse<UserProfileDTO>(
+                    true,
+                    "Lấy profile thành công",
+                    result));
+        }
+
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile(UpdateUserProfileDTO dto)    
+        {
+            var username = User.FindFirstValue(ClaimTypes.Name);
+
+            await _userService.UpdateProfileAsync(username, dto);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Cập nhật profile thành công",
+                    null));
+        }
+
     }
  }

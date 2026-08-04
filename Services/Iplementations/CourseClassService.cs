@@ -1,25 +1,25 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
-using StudentManagementAPI.Data;
-using StudentManagementAPI.DTOs.Courses;
-using StudentManagementAPI.Exceptions;
-using StudentManagementAPI.Services.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 using Microsoft.EntityFrameworkCore;
 using StudentManagementAPI.Data;
+using StudentManagementAPI.Data;
+using StudentManagementAPI.DTOs.CourseClasses;
+using StudentManagementAPI.DTOs.Courses;
 using StudentManagementAPI.DTOs.Courses;
 using StudentManagementAPI.DTOs.Teachers;
 using StudentManagementAPI.Enums;
+using StudentManagementAPI.Exceptions;
+using StudentManagementAPI.Exceptions;
 using StudentManagementAPI.Models;
+using StudentManagementAPI.Services.Interfaces;
 using StudentManagementAPI.Services.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq;
 using System.Threading.Tasks;
-using StudentManagementAPI.Exceptions;
+using System.Threading.Tasks;
 namespace StudentManagementAPI.Services.Iplementations
 {
     public class CourseClassService:ICourseClasses
@@ -145,6 +145,35 @@ namespace StudentManagementAPI.Services.Iplementations
                         currentStudents >=
                         cc.MaxStudents
                 };
+            });
+        }
+
+
+        public async Task<IEnumerable<CourseClassStudentDTO>> GetStudentsInClassAsync(int classId)
+        {
+            var classExists = await _context.CourseClasses
+                .AnyAsync(x => x.Id == classId);
+
+            if (!classExists)
+                throw new NotFoundException("Class không tồn tại");
+
+            var enrollments = await _context.Enrollments
+
+                .Where(e => e.CourseClassId == classId)
+
+                .Include(e => e.User)
+
+                .ToListAsync();
+
+            return enrollments.Select(e => new CourseClassStudentDTO
+            {
+                StudentId = e.User.Id,
+
+                StudentCode = e.User.StudentCode,
+
+                Name = e.User.Name,
+
+                EnrollmentStatus = e.Status.ToString()
             });
         }
 

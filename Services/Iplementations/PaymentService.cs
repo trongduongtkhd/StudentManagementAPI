@@ -168,7 +168,7 @@ public async Task<PaymentDTO> CreatePaymentAsync(string username, CreatePaymentD
                 var enrollment = item.Enrollment;
 
 
-                enrollment.Status = EnrollmentStatus.Paid;
+                enrollment.Status = EnrollmentStatus.Active;
 
 
                 await _notificationService.CreateAsync(

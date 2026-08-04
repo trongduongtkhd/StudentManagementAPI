@@ -20,8 +20,7 @@ namespace StudentManagementAPI.Services.Iplementations
             _context = context;
         }
 
-        public async Task<AdminDashboardDTO>
-      GetAdminDashboardAsync()
+        public async Task<AdminDashboardDTO> GetAdminDashboardAsync()
         {
             return new AdminDashboardDTO
             {
@@ -40,10 +39,10 @@ namespace StudentManagementAPI.Services.Iplementations
                         .CountAsync(sc =>
                             sc.Status == EnrollmentStatus.Pending),
 
-                PaidEnrollments =
+                ActiveEnrollments =
                     await _context.Enrollments
                         .CountAsync(sc =>
-                            sc.Status == EnrollmentStatus.Paid),
+                            sc.Status == EnrollmentStatus.Active),
 
                 CompletedEnrollments =
                     await _context.Enrollments

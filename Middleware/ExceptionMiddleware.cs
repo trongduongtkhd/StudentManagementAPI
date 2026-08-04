@@ -57,7 +57,13 @@ namespace StudentManagementAPI.Middleware
                     statusCode = (int)HttpStatusCode.Forbidden;
                     message = exception.Message;
                     break;
+                case UnauthorizedException:
 
+                    statusCode = (int)HttpStatusCode.Unauthorized;
+
+                    message = exception.Message;
+
+                    break;
                 default:
                     statusCode = 500;
                     break;

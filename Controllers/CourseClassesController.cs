@@ -17,7 +17,7 @@ namespace StudentManagementAPI.Controllers
         private readonly ICourseService _courseService;
         private readonly ICourseClasses _courseClassService;
         public CourseClassesController(
-            ICourseService courseService , ICourseClasses courseClassService)
+            ICourseService courseService, ICourseClasses courseClassService)
         {
             _courseService = courseService;
             _courseClassService = courseClassService;
@@ -120,6 +120,19 @@ namespace StudentManagementAPI.Controllers
                     result
                 )
             );
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{id}/students")]
+        public async Task<IActionResult> GetStudents(int id)
+        {
+            var result = await _courseClassService.GetStudentsInClassAsync(id);
+
+            return Ok(new ApiResponse<object>(
+                true,
+                "Lấy danh sách học viên thành công",
+                result));
+
         }
     }
 }

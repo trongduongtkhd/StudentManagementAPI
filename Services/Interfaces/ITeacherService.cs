@@ -21,6 +21,7 @@ namespace StudentManagementAPI.Services.Interfaces
         Task<EnrollmentDetailDTO> GetEnrollmentDetailAsync(string username, int classId, int studentId);
 
         Task<TeacherProfileDTO> GetProfileAsync(string username);
+        Task UpdateProfileAsync(string username, UpdateTeacherProfileDTO dto);
 
         //Calendar
         Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username);

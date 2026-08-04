@@ -4,7 +4,7 @@
     {
         Pending = 1,
 
-        Paid = 2,
+        Active  = 2,
 
         Completed = 3,
 

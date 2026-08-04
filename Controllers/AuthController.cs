@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
+using StudentManagementAPI.Helpers;
 using StudentManagementAPI.Models;
 using StudentManagementAPI.Services.Interfaces;
 using System;
@@ -51,7 +52,13 @@ namespace StudentManagementAPI.Controllers
         public async Task<IActionResult> Login(LoginDTO dto)
         {
             var result = await _authService.LoginAsync(dto);
-            return Ok(result);
+            return Ok(
+           new ApiResponse<object>(
+        true,
+        "Đăng nhập thành công",
+        result
+    )
+);
         }
     }
 }

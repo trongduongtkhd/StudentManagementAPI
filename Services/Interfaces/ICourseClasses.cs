@@ -1,4 +1,5 @@
-﻿using StudentManagementAPI.DTOs.Courses;
+﻿using StudentManagementAPI.DTOs.CourseClasses;
+using StudentManagementAPI.DTOs.Courses;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -8,5 +9,7 @@ namespace StudentManagementAPI.Services.Interfaces
     {
         Task AssignTeacherAsync(int classId, int teacherId);
         Task<IEnumerable<CourseClassDTO>> GetClassesByCourseIdAsync(int courseId);
+
+        Task<IEnumerable<CourseClassStudentDTO>> GetStudentsInClassAsync(int classId);
     }
 }
