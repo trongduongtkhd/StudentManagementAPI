@@ -162,7 +162,17 @@ namespace StudentManagementAPI.Services.Iplementations
                 Bio = teacher.Bio,
                 Specialization = teacher.Specialization,
                 YearsOfExperience = teacher.YearsOfExperience,
-                CreatedAt = teacher.CreatedAt,
+                Email = teacher.User.Email,
+
+                Phone = teacher.User.Phone,
+
+                Address = teacher.User.Address,
+
+                Gender = teacher.User.Gender,
+
+                DateOfBirth = teacher.User.DateOfBirth,
+
+                JoinDate = teacher.User.JoinDate,
                 IsActive = teacher.IsActive,
                 TotalClasses = teacher.CourseClasses.Count,  
                 TotalStudents = teacher.CourseClasses.Sum(c => c.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled)),

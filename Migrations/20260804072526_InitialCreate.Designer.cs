@@ -12,7 +12,7 @@ using StudentManagementAPI.Data;
 namespace StudentManagementAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260714074125_InitialCreate")]
+    [Migration("20260804072526_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -239,6 +239,9 @@ namespace StudentManagementAPI.Migrations
                     b.Property<string>("Specialization")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TeacherCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
@@ -261,8 +264,29 @@ namespace StudentManagementAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Age")
                         .HasColumnType("int");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -270,7 +294,13 @@ namespace StudentManagementAPI.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StudentCode")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
@@ -285,6 +315,8 @@ namespace StudentManagementAPI.Migrations
                         {
                             Id = 1,
                             Age = 25,
+                            IsActive = false,
+                            JoinDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "admin123",
                             PasswordHash = "$2a$11$hDet60JpHWxzsFIrLjU1bOohiLojZ03BlxvC0/9RysBDXVQPioSVq",
                             Role = "Admin",
