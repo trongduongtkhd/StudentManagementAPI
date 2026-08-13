@@ -9,8 +9,7 @@ namespace StudentManagementAPI.Models
         public int Id { get; set; }
         public string PaymentCode { get; set; }
         // USER
-        public int UserId { get; set; }
-
+        public int UserId { get; set; } 
         public User User { get; set; }
 
         // TOTAL
@@ -23,7 +22,7 @@ namespace StudentManagementAPI.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? PaidAt { get; set; }
         // PAYMENT ITEMS
-        public ICollection<PaymentItem> PaymentItems { get; set; }
-            = new List<PaymentItem>();
+        public ICollection<PaymentItem> PaymentItems { get; set; } = new List<PaymentItem>();
+
     }
 }

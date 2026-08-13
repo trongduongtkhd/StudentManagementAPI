@@ -16,7 +16,7 @@ namespace StudentManagementAPI.Models
         public string ImageUrl { get; set; }
 
         // 1 Course có nhiều lớp học
-        public ICollection<CourseClass> Classes { get; set; }
-            = new List<CourseClass>();
+        public ICollection<CourseClass> Classes { get; set; } = new List<CourseClass>(); 
+
     }
 }

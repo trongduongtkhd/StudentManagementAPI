@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentManagementAPI.Models;
+using System.Collections.Generic;
 
 namespace StudentManagementAPI.Data
 {
@@ -27,34 +28,50 @@ namespace StudentManagementAPI.Data
 
             // 1 Course có nhiều CourseClass
             modelBuilder.Entity<CourseClass>()
-    .HasOne(cc => cc.Course)
-    .WithMany(c => c.Classes)
-    .HasForeignKey(cc => cc.CourseId);
+           .HasOne(cc => cc.Course)
+            .WithMany(c => c.Classes)
+              .HasForeignKey(cc => cc.CourseId);
 
             // 1 CourseClass có nhiều student đăng ký
             modelBuilder.Entity<Enrollment>()
-    .HasOne(sc => sc.CourseClass)
-    .WithMany(cc => cc.Enrollments)
-    .HasForeignKey(sc => sc.CourseClassId);
+             .HasOne(sc => sc.CourseClass)
+               .WithMany(cc => cc.Enrollments)
+                 .HasForeignKey(sc => sc.CourseClassId);
 
 
             // q user co nhieu luot dang ki 
             modelBuilder.Entity<Enrollment>()
-    .HasOne(sc => sc.User)
-    .WithMany(u => u.Enrollments)
-    .HasForeignKey(sc => sc.UserId);
+           .HasOne(sc => sc.User)
+             .WithMany(u => u.Enrollments)
+               .HasForeignKey(sc => sc.UserId);
 
-            modelBuilder.Entity<PaymentItem>()
+
+
+
+    // Đoạn này không xuất hiện trong code vì EF Core tự làm được  qua đoạn code sau 
+
+            // Payment
+//public ICollection<PaymentItem> PaymentItems { get; set; }
+
+//        // PaymentItem
+//        public int PaymentId { get; set; }
+//        public Payment Payment { get; set; }
+        //        modelBuilder.Entity<PaymentItem>()
+        //.HasOne(paymentItem => paymentItem.Payment)
+        //.WithMany(payment => payment.PaymentItems)
+        //.HasForeignKey(paymentItem => paymentItem.PaymentId);
+
+        modelBuilder.Entity<PaymentItem>()
                 .HasOne(pi => pi.Enrollment)
-                .WithMany(sc => sc.PaymentItems)
-                .HasForeignKey(pi => pi.EnrollmentId)
-                .OnDelete(DeleteBehavior.NoAction);
+                  .WithMany(sc => sc.PaymentItems)
+                   .HasForeignKey(pi => pi.EnrollmentId)
+                     .OnDelete(DeleteBehavior.NoAction);
             // =====================================================
             // DECIMAL CONFIG
             // =====================================================
             modelBuilder.Entity<Course>()
-      .Property(c => c.Price)
-      .HasPrecision(18, 2); 
+              .Property(c => c.Price)
+               .HasPrecision(18, 2); 
             modelBuilder.Entity<CourseClass>()
                 .Property(cc => cc.Price)
                 .HasColumnType("decimal(18,2)");
@@ -68,9 +85,9 @@ namespace StudentManagementAPI.Data
                 .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Teacher>()
-    .HasOne(t => t.User)
-    .WithOne(u => u.Teacher)
-    .HasForeignKey<Teacher>(t => t.UserId);
+              .HasOne(t => t.User)
+               .WithOne(u => u.Teacher)
+                .HasForeignKey<Teacher>(t => t.UserId);
 
             modelBuilder.Entity<CourseClass>()
                 .HasOne(cc => cc.Teacher)

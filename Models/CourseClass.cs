@@ -39,7 +39,7 @@ namespace StudentManagementAPI.Models
         // gia 
         public decimal Price { get; set; }
         // Navigation
-        public ICollection<Enrollment> Enrollments { get; set; }
-            = new List<Enrollment>();
+        public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+
     }
 }
