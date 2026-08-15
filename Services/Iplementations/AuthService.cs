@@ -10,6 +10,7 @@ using StudentManagementAPI.Data;
 using StudentManagementAPI.Data;
 using StudentManagementAPI.DTOs;
 using StudentManagementAPI.DTOs;
+using StudentManagementAPI.Exceptions;
 using StudentManagementAPI.Middleware;
 using StudentManagementAPI.Models;
 using StudentManagementAPI.Models;
@@ -40,36 +41,68 @@ namespace StudentManagementAPI.Services.Iplementations
 
         public async Task<string> RegisterAsync(RegisterDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                throw new Exception("Username và Password không được để trống");
+            if (string.IsNullOrWhiteSpace(dto.Username))
+                throw new BadRequestException("Username không được để trống");
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                throw new BadRequestException("Password không được để trống");
 
             if (dto.Password.Length < 6)
-                throw new Exception("Password phải >= 6 ký tự");
+                throw new BadRequestException("Password phải >= 6 ký tự");
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new BadRequestException("Họ tên không được để trống");
 
             var existingUser = await _context.Users
-                .FirstOrDefaultAsync(x => x.Username == dto.Username);
+                .AnyAsync(x => x.Username == dto.Username);
+             
+            if (existingUser) throw new BadRequestException("Username đã tồn tại");
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (existingUser != null)
-                throw new Exception("Username đã tồn tại");
-
-            var user = new User
+            try
             {
-                Username = dto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role = "User",
-                Name = dto.Name,
-                JoinDate = DateTime.Now,
-                IsActive = true
-            };
+                // =====================================================
+                // 1. CREATE USER ACCOUNT
+                // =====================================================
+                var user = new User
+                {
+                    Username = dto.Username,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Role = "Student"
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                // =====================================================
+                // 2. CREATE STUDENT PROFILE
+                // =====================================================
+                var student = new Student
+                {
+                    UserId = user.Id,
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            // sinh mã học viên
-            user.StudentCode = $"ST{user.Id:D5}";
+                    Name = dto.Name,
 
-            await _context.SaveChangesAsync();
+                    JoinDate = DateTime.UtcNow,
 
-            return "Đăng ký thành công";
+                    IsActive = true
+                };
+               _context.Students.Add(student);
+                await _context.SaveChangesAsync();
+                // =====================================================
+                // 3. GENERATE STUDENT CODE
+                // =====================================================
+                student.StudentCode = $"ST{student.Id:D5}";
+                await _context.SaveChangesAsync();
+                // =====================================================
+                // 4. COMMIT
+                // =====================================================
+                await transaction.CommitAsync();
+                return "Đăng ký thành công";
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<object> LoginAsync(LoginDTO dto)

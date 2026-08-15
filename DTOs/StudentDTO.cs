@@ -2,7 +2,7 @@
 
 namespace StudentManagementAPI.DTOs
 {
-    public class UserDTO
+    public class StudentDTO
     {
         public int Id { get; set; }
         public string StudentCode { get; set; }

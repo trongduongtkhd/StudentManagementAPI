@@ -93,10 +93,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 // FIX:
                 // Không count Cancelled
                 // =========================
-                var currentStudents =
-                    cc.Enrollments.Count(sc =>
-                        sc.Status !=
-                        EnrollmentStatus.Cancelled);
+                var currentStudents = cc.Enrollments.Count(sc => sc.Status != EnrollmentStatus.Cancelled);
 
                 return new CourseClassDTO
                 {
@@ -107,7 +104,7 @@ namespace StudentManagementAPI.Services.Iplementations
                     CourseName = cc.Course.Name,
                     TeacherId = cc.TeacherId,
 
-                    TeacherName = cc.Teacher != null ? cc.Teacher.User.Name : "Chưa phân công",
+                    TeacherName = cc.Teacher != null ? cc.Teacher.Name : "Chưa phân công",
 
                     ClassName = cc.ClassName,
                     Price = cc.Course.Price,
@@ -126,24 +123,18 @@ namespace StudentManagementAPI.Services.Iplementations
 
                     MaxStudents = cc.MaxStudents,
 
-                    CurrentStudents =
-                        currentStudents,
+                    CurrentStudents = currentStudents,
 
                     // =========================
                     // FIX:
                     // Remaining slots
                     // =========================
-                    RemainingSlots =
-                        cc.MaxStudents -
-                        currentStudents,
-
+                    RemainingSlots = cc.MaxStudents - currentStudents,
                     // =========================
                     // FIX:
                     // Full logic
                     // =========================
-                    IsFull =
-                        currentStudents >=
-                        cc.MaxStudents
+                    IsFull = currentStudents >= cc.MaxStudents
                 };
             });
         }
@@ -161,17 +152,17 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 .Where(e => e.CourseClassId == classId)
 
-                .Include(e => e.User)
+                .Include(e => e.Student)
 
                 .ToListAsync();
 
             return enrollments.Select(e => new CourseClassStudentDTO
             {
-                StudentId = e.User.Id,
+                StudentId = e.Student.Id,
 
-                StudentCode = e.User.StudentCode,
+                StudentCode = e.Student.StudentCode,
 
-                Name = e.User.Name,
+                Name = e.Student.Name,
 
                 EnrollmentStatus = e.Status.ToString()
             });

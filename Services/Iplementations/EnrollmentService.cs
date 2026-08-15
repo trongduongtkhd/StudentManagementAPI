@@ -26,12 +26,12 @@ namespace StudentManagementAPI.Services.Iplementations
         public async Task EnrollAsync(string username, int courseClassId)
         {
             // ================= USER =================
-            var user = await _context.Users
+            var student = await _context.Students
                 .Include(u => u.Enrollments)
                     .ThenInclude(sc => sc.CourseClass)
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.User.Username == username);
 
-            if (user == null)
+            if (student == null)
                 throw new NotFoundException("User không tồn tại");
 
             // ================= CLASS =================
@@ -54,7 +54,7 @@ namespace StudentManagementAPI.Services.Iplementations
             // ================= CHECK ALREADY ENROLLED =================
             var alreadyEnrolled = await _context.Enrollments
                 .AnyAsync(sc =>
-                    sc.UserId == user.Id &&
+                    sc.StudentId == student.Id &&
                     sc.CourseClassId == courseClassId &&
                     sc.Status != EnrollmentStatus.Cancelled);
 
@@ -62,7 +62,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 throw new BadRequestException("Bạn đã đăng ký lớp này");
 
             // ================= CHECK SAME COURSE =================
-            var sameCourse = user.Enrollments
+            var sameCourse = student.Enrollments
                 .Any(sc =>
                     sc.CourseClass.CourseId == selectedClass.CourseId &&
                     sc.Status != EnrollmentStatus.Cancelled);
@@ -71,7 +71,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 throw new BadRequestException("Bạn đã đăng ký khóa học này rồi");
 
             // ================= CHECK SCHEDULE CONFLICT =================
-            var hasConflict = user.Enrollments.Any(sc =>
+            var hasConflict = student.Enrollments.Any(sc =>
 
                 // Ignore cancelled
                 sc.Status != EnrollmentStatus.Cancelled
@@ -94,13 +94,10 @@ namespace StudentManagementAPI.Services.Iplementations
             // ================= ENROLL =================
             var studentCourse = new Enrollment
             {
-                UserId = user.Id,
-
+                StudentId = student.Id,
                 CourseClassId = courseClassId,
                 EnrolledAt = DateTime.UtcNow,
                 Status = EnrollmentStatus.Pending,
-
-
             };
 
             _context.Enrollments.Add(studentCourse);
@@ -108,7 +105,7 @@ namespace StudentManagementAPI.Services.Iplementations
             await _context.SaveChangesAsync();
             // ================= NOTIFICATION =================
             await _notificationService.CreateAsync(
-            user.Id,
+            student.Id,
 
             "Đăng ký khóa học thành công",
 
@@ -120,50 +117,47 @@ namespace StudentManagementAPI.Services.Iplementations
 
         public async Task CancelAsync(string username, int courseClassId)
         {
-            // ================= USER =================
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            // ================= STUDENT =================
+            var student = await _context.Students
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.Username == username);
 
-            if (user == null) throw new NotFoundException("User không tồn tại");
+            if (student == null)
+                throw new NotFoundException("Student không tồn tại");
 
             // ================= ENROLLMENT =================
-
             var enrollment = await _context.Enrollments
-
                 .Include(e => e.CourseClass)
-                  .ThenInclude(cc => cc.Course)
-                   
-                 .FirstOrDefaultAsync(e => e.UserId == user.Id && e.CourseClassId == courseClassId);
+                    .ThenInclude(cc => cc.Course)
+                .FirstOrDefaultAsync(e =>
+                    e.StudentId == student.Id &&
+                    e.CourseClassId == courseClassId);
 
-            if (enrollment == null) throw new NotFoundException("Bạn chưa đăng ký lớp này");
+            if (enrollment == null)
+                throw new NotFoundException("Bạn chưa đăng ký lớp này");
 
             // ================= STATUS =================
-
             if (enrollment.Status == EnrollmentStatus.Cancelled)
-            {
                 throw new BadRequestException("Đăng ký đã được hủy");
-            }
+
             // ================= CANCEL =================
             enrollment.Status = EnrollmentStatus.Cancelled;
 
             await _context.SaveChangesAsync();
+
             // ================= NOTIFICATION =================
-
             await _notificationService.CreateAsync(
-
-                user.Id,
-
-               "Hủy đăng ký",
-
+                student.UserId,
+                "Hủy đăng ký",
                 $"Bạn đã hủy lớp {enrollment.CourseClass.ClassName}"
-
-             );
+            );
         }
-    
+
         public async Task<IEnumerable<MyEnrollmentDTO>> GetMyEnrollmentsAsync(string username)
         {
 
             // ================= USER =================
-            var user = await _context.Users
+            var student = await _context.Students
                 .Include(u => u.Enrollments)
                     .ThenInclude(e => e.CourseClass)
                         .ThenInclude(cc => cc.Course)
@@ -171,12 +165,12 @@ namespace StudentManagementAPI.Services.Iplementations
                     .ThenInclude(e => e.PaymentItems)
                         .ThenInclude(pi => pi.Payment)
                 .FirstOrDefaultAsync(
-                    u => u.Username == username);
+                    u => u.User.Username == username);
 
-            if (user == null) throw new NotFoundException("User không tồn tại");
+            if (student == null) throw new NotFoundException("User không tồn tại");
 
             // ================= RETURN =================
-            return user.Enrollments.Select(e => new MyEnrollmentDTO
+            return student.Enrollments.Select(e => new MyEnrollmentDTO
             {
             EnrollmentId = e.Id,
 
@@ -202,7 +196,8 @@ namespace StudentManagementAPI.Services.Iplementations
 
             var query = _context.Enrollments
 
-                .Include(e => e.User)
+                .Include(e => e.Student)
+                  .ThenInclude(s => s.User)
 
                 .Include(e => e.CourseClass)
                     .ThenInclude(cc => cc.Course)
@@ -222,11 +217,11 @@ namespace StudentManagementAPI.Services.Iplementations
             {
                     Id = e.Id,
 
-                    StudentId = e.UserId,
+                    StudentId = e.StudentId,
 
-                    StudentName = e.User.Name,
+                    StudentName = e.Student.Name,
 
-                    Username = e.User.Username,
+                    Username = e.Student.User.Username,
 
                     CourseId = e.CourseClass.CourseId,
 
@@ -250,7 +245,8 @@ namespace StudentManagementAPI.Services.Iplementations
         {
 
             var enrollment = await _context.Enrollments
-                .Include(e => e.User)
+                .Include(e => e.Student)
+                  .ThenInclude(s => s.User)
 
                 .Include(e => e.CourseClass)
                    .ThenInclude(cc => cc.Teacher)
@@ -274,13 +270,13 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 EnrolledAt = enrollment.EnrolledAt,
 
-                StudentId = enrollment.UserId,
+                StudentId = enrollment.StudentId,
 
-                StudentName = enrollment.User.Name,
+                StudentName = enrollment.Student.Name,
 
-                Username = enrollment.User.Username,
+                Username = enrollment.Student.User.Username,
 
-                Age = enrollment.User.Age,
+                Age = enrollment.Student.Age,
                 DayOfWeek = enrollment.CourseClass.DayOfWeek,
 
                 StartTime = enrollment.CourseClass.StartTime,
@@ -294,7 +290,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 CourseClassId = enrollment.CourseClassId,
 
                 ClassName = enrollment.CourseClass.ClassName,
-                TeacherName = enrollment.CourseClass.Teacher?.User.Name,
+                TeacherName = enrollment.CourseClass.Teacher?.Name,
 
                 PaymentCode = paymentItem?.Payment.PaymentCode,
 

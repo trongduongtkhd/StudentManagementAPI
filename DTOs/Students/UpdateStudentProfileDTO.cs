@@ -2,7 +2,7 @@
 
 namespace StudentManagementAPI.DTOs.Users
 {
-    public class UpdateUserProfileDTO
+    public class UpdateStudentProfileDTO
     {
         public string Name { get; set; }
 

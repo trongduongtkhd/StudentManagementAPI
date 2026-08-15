@@ -9,6 +9,7 @@ namespace StudentManagementAPI.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Student> Students { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseClass> CourseClasses { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
@@ -21,10 +22,26 @@ namespace StudentManagementAPI.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            // =====================================================
+            // USER 1 - 0..1 STUDENT
+            // =====================================================
 
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.User)
+                .WithOne(u => u.Student)
+                .HasForeignKey<Student>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Student>()
+             .HasIndex(s => s.UserId)
+               .IsUnique();
+
+            modelBuilder.Entity<Student>()
+             .HasIndex(s => s.StudentCode)
+              .IsUnique();
             // 👉 Composite key cho bảng many-to-many
             modelBuilder.Entity<Enrollment>()
-                .ToTable("StudentCourses");
+                .ToTable("Enrollment");
 
             // 1 Course có nhiều CourseClass
             modelBuilder.Entity<CourseClass>()
@@ -41,27 +58,12 @@ namespace StudentManagementAPI.Data
 
             // q user co nhieu luot dang ki 
             modelBuilder.Entity<Enrollment>()
-           .HasOne(sc => sc.User)
-             .WithMany(u => u.Enrollments)
-               .HasForeignKey(sc => sc.UserId);
+              .HasOne(e => e.Student)
+                .WithMany(s => s.Enrollments)
+                 .HasForeignKey(e => e.StudentId)
+                   .OnDelete(DeleteBehavior.NoAction);
 
-
-
-
-    // Đoạn này không xuất hiện trong code vì EF Core tự làm được  qua đoạn code sau 
-
-            // Payment
-//public ICollection<PaymentItem> PaymentItems { get; set; }
-
-//        // PaymentItem
-//        public int PaymentId { get; set; }
-//        public Payment Payment { get; set; }
-        //        modelBuilder.Entity<PaymentItem>()
-        //.HasOne(paymentItem => paymentItem.Payment)
-        //.WithMany(payment => payment.PaymentItems)
-        //.HasForeignKey(paymentItem => paymentItem.PaymentId);
-
-        modelBuilder.Entity<PaymentItem>()
+            modelBuilder.Entity<PaymentItem>()
                 .HasOne(pi => pi.Enrollment)
                   .WithMany(sc => sc.PaymentItems)
                    .HasForeignKey(pi => pi.EnrollmentId)
@@ -102,8 +104,6 @@ namespace StudentManagementAPI.Data
                     Username = "admin",
                     PasswordHash = "$2a$11$hDet60JpHWxzsFIrLjU1bOohiLojZ03BlxvC0/9RysBDXVQPioSVq", // mk : 123456
                     Role = "Admin",
-                    Name = "admin123",
-                    Age = 25
                 }
             );
         }

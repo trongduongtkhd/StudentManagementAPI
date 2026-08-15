@@ -23,7 +23,7 @@ namespace StudentManagementAPI.Controllers
         // =================================================
 
         [HttpPost("{courseClassId}")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> Enroll(int courseClassId)
         {
 
@@ -47,7 +47,7 @@ namespace StudentManagementAPI.Controllers
 
 
         [HttpPut("{courseClassId}/cancel")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> Cancel(int courseClassId)
         {
 
@@ -70,7 +70,7 @@ namespace StudentManagementAPI.Controllers
 
 
         [HttpGet("me")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetMyEnrollments()
         {
             var username = User.FindFirstValue(ClaimTypes.Name);

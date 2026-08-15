@@ -2,7 +2,7 @@
 
 namespace StudentManagementAPI.DTOs.Users
 {
-    public class UserProfileDTO
+    public class StudentProfileDTO
     {
         public int Id { get; set; }
 

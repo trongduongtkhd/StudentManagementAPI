@@ -101,6 +101,38 @@ namespace StudentManagementAPI.Controllers
                 )
             );
         }
+
+
+        [HttpPost("teacher-account")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateTeacherAccount(CreateTeacherAccountDTO dto)
+        {
+            var result = await _teacherService.CreateTeacherAccountAsync(dto);
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Tạo tài khoản Teacher thành công",
+                    result
+                )
+            );
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("available-teachers")]
+        public async Task<IActionResult> GetAvailableTeachers()
+        {
+            var result = await _teacherService.GetAvailableTeachersAsync();
+
+            return Ok(
+                new ApiResponse<object>(
+                    true,
+                    "Lấy danh sách Teacher khả dụng thành công",
+                    result
+                ));
+        }
+
         // 
         [Authorize(Roles = "Teacher")]
         [HttpGet("me/dashboard")]

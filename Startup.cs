@@ -58,7 +58,7 @@ namespace StudentManagementAPI
             .Add(new JsonStringEnumConverter());
     });
             // 👉 ADD Ở ĐÂY
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICourseService, CourseService>();
             services.AddScoped<ITeacherService, TeacherService>();

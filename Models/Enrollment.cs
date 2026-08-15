@@ -8,10 +8,10 @@ namespace StudentManagementAPI.Models
     {
         public int Id { get; set; }
 
-        // USER
-        public int UserId { get; set; }
+        // STUDENT
+        public int StudentId { get; set; }
 
-        public User User { get; set; }
+        public Student Student { get; set; }
 
         // COURSE CLASS
         public int CourseClassId { get; set; }
@@ -23,7 +23,7 @@ namespace StudentManagementAPI.Models
 
         public DateTime EnrolledAt { get; set; } 
         
-        public ICollection<PaymentItem> PaymentItems { get; set; }
-    = new List<PaymentItem>();
+        public ICollection<PaymentItem> PaymentItems { get; set; } = new List<PaymentItem>();
+
     }
 }

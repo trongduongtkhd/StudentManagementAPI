@@ -1,4 +1,4 @@
-﻿namespace StudentManagementAPI.DTOs.Users
+﻿namespace StudentManagementAPI.DTOs.Teachers
 {
     public class TeacherAccountDTO
     {

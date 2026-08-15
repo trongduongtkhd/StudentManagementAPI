@@ -48,7 +48,7 @@ public async Task<PaymentDTO> CreatePaymentAsync(string username, CreatePaymentD
                     .ThenInclude(pi => pi.Payment)
 
                 .Where(sc =>
-                    sc.UserId == user.Id &&
+                    sc.StudentId == user.Id &&
                     dto.CourseClassIds.Contains(sc.CourseClassId) &&
                     sc.Status == EnrollmentStatus.Pending)
 

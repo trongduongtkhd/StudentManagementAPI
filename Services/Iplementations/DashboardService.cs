@@ -26,7 +26,7 @@ namespace StudentManagementAPI.Services.Iplementations
             {
                 TotalStudents =
                     await _context.Users
-                        .CountAsync(u => u.Role == "User"),
+                        .CountAsync(u => u.Role == "Student"),
 
                 TotalCourses =
                     await _context.Courses.CountAsync(),
@@ -61,28 +61,17 @@ namespace StudentManagementAPI.Services.Iplementations
             };
         }
 
-        public async Task<UserDashboardDTO>
-            GetUserDashboardAsync(string username)
+        public async Task<UserDashboardDTO> GetUserDashboardAsync(string username)
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u =>
-                    u.Username == username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
-                throw new NotFoundException("User không tồn tại");
+                throw new NotFoundException("Student không tồn tại");
 
             return new UserDashboardDTO
             {
-                MyCourses =
-       await _context.Enrollments
-           .CountAsync(sc =>
-               sc.UserId == user.Id),
-
-                PendingPayments =
-       await _context.Payments
-           .CountAsync(p =>
-               p.UserId == user.Id &&
-               p.Status == PaymentStatus.Pending)
+                MyCourses = await _context.Enrollments.CountAsync(sc => sc.StudentId == user.Id),
+                PendingPayments = await _context.Payments.CountAsync(p => p.UserId == user.Id && p.Status == PaymentStatus.Pending)
             };
         }
     }

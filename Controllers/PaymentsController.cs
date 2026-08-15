@@ -26,12 +26,10 @@ namespace StudentManagementAPI.Controllers
         // =====================================================
 
         [HttpPost]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> CreatePayment(
-            CreatePaymentDTO dto)
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> CreatePayment(CreatePaymentDTO dto)
         {
-            var username =
-                User.FindFirstValue(ClaimTypes.Name);
+            var username = User.FindFirstValue(ClaimTypes.Name);
 
             if (string.IsNullOrEmpty(username))
                 return Unauthorized(
@@ -41,10 +39,7 @@ namespace StudentManagementAPI.Controllers
                         null
                     )
                 );
-
-            var result = await _paymentService
-                .CreatePaymentAsync(username, dto);
-
+            var result = await _paymentService.CreatePaymentAsync(username, dto);
             return Ok(
                 new ApiResponse<object>(
                     true,
@@ -59,11 +54,10 @@ namespace StudentManagementAPI.Controllers
         // =====================================================
 
         [HttpPost("{id}/pay")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> Pay(int id)
         {
-            var username =
-                User.FindFirstValue(ClaimTypes.Name);
+            var username = User.FindFirstValue(ClaimTypes.Name);
 
             if (string.IsNullOrEmpty(username))
                 return Unauthorized(
@@ -74,11 +68,7 @@ namespace StudentManagementAPI.Controllers
                     )
                 );
 
-            var result =
-                await _paymentService.PayAsync(
-                    id,
-                    username);
-
+            var result = await _paymentService.PayAsync(id, username);
             return Ok(
                 new ApiResponse<object>(
                     true,
@@ -92,11 +82,11 @@ namespace StudentManagementAPI.Controllers
         // =====================================================
 
         [HttpGet("my-payments")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetMyPayments()
         {
-            var username =
-                User.FindFirstValue(ClaimTypes.Name);
+            var username = User.FindFirstValue(ClaimTypes.Name);
+
 
             if (string.IsNullOrEmpty(username))
                 return Unauthorized(
@@ -106,10 +96,8 @@ namespace StudentManagementAPI.Controllers
                         null
                     )
                 );
-
-            var result =
-                await _paymentService
-                    .GetMyPaymentsAsync(username);
+             
+            var result = await _paymentService.GetMyPaymentsAsync(username);
 
             return Ok(
                 new ApiResponse<object>(

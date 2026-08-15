@@ -13,12 +13,12 @@ namespace StudentManagementAPI.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class UsersController : ControllerBase
+    public class StudentController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IStudentService _userService;
 
-        public UsersController(
-            IUserService userService)
+        public StudentController(
+            IStudentService userService)
         {
             _userService = userService;
         }
@@ -75,37 +75,10 @@ namespace StudentManagementAPI.Controllers
         }
 
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet("available-teachers")]
-        public async Task<IActionResult> GetAvailableTeachers()
-        {
-            var result = await _userService.GetAvailableTeachersAsync();
-
-            return Ok(
-                new ApiResponse<object>(
-                    true,
-                    "Lấy danh sách Teacher khả dụng thành công",
-                    result
-                ));
-        }
 
 
-        [HttpPost("teacher-account")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateTeacherAccount(CreateTeacherAccountDTO dto)
-        {
-            var result = await _userService.CreateTeacherAccountAsync(dto);
-
-            return Ok(
-                new ApiResponse<object>(
-                    true,
-                    "Tạo tài khoản Teacher thành công",
-                    result
-                )
-            );
-        }
-
-        [Authorize(Roles = "User")]
+      
+        [Authorize(Roles = "Student")]
         [HttpGet("me/schedule")]
         public async Task<IActionResult> GetMySchedule()
         {
@@ -128,14 +101,14 @@ namespace StudentManagementAPI.Controllers
             var result = await _userService.GetProfileAsync(username);
 
             return Ok(
-                new ApiResponse<UserProfileDTO>(
+                new ApiResponse<StudentProfileDTO>(
                     true,
                     "Lấy profile thành công",
                     result));
         }
 
         [HttpPut("profile")]
-        public async Task<IActionResult> UpdateProfile(UpdateUserProfileDTO dto)    
+        public async Task<IActionResult> UpdateProfile(UpdateStudentProfileDTO dto)    
         {
             var username = User.FindFirstValue(ClaimTypes.Name);
 

@@ -51,10 +51,6 @@ namespace StudentManagementAPI.Services.Iplementations
                     Username = dto.Username,
 
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-
-                    Name = dto.Name,
-                    JoinDate = DateTime.Now,
-
                     Role = "Teacher"
                 };
 
@@ -66,13 +62,16 @@ namespace StudentManagementAPI.Services.Iplementations
                 {
                     UserId = user.Id,
 
+                    Name = dto.Name,
+
+                    JoinDate = DateTime.Now,
+
                     Specialization = dto.Specialization,
 
                     YearsOfExperience = dto.YearsOfExperience,
 
                     IsActive = true,
 
-                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.Teachers.Add(teacher);
@@ -92,7 +91,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                     Username = user.Username,
 
-                    Name = user.Name,
+                    Name = teacher.Name,
 
                     Specialization = teacher.Specialization,
 
@@ -121,7 +120,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 Username = t.User.Username,
 
-                Name = t.User.Name,
+                Name = t.Name,
 
                 Specialization = t.Specialization,
                
@@ -158,21 +157,21 @@ namespace StudentManagementAPI.Services.Iplementations
                 TeacherCode = teacher.TeacherCode,
                 UserId = teacher.UserId,
                 Username = teacher.User.Username,
-                Name = teacher.User.Name,
+                Name = teacher.Name,
                 Bio = teacher.Bio,
                 Specialization = teacher.Specialization,
                 YearsOfExperience = teacher.YearsOfExperience,
-                Email = teacher.User.Email,
+                Email = teacher.Email,
 
-                Phone = teacher.User.Phone,
+                Phone = teacher.Phone,
 
-                Address = teacher.User.Address,
+                Address = teacher.Address,
 
-                Gender = teacher.User.Gender,
+                Gender = teacher.Gender,
 
-                DateOfBirth = teacher.User.DateOfBirth,
+                DateOfBirth = teacher.DateOfBirth,
 
-                JoinDate = teacher.User.JoinDate,
+                JoinDate = teacher.JoinDate,
                 IsActive = teacher.IsActive,
                 TotalClasses = teacher.CourseClasses.Count,  
                 TotalStudents = teacher.CourseClasses.Sum(c => c.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled)),
@@ -274,7 +273,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
             return new TeacherDashboardDTO
             {
-                TeacherName = teacher.User.Name,
+                TeacherName = teacher.Name,
 
                 TotalClasses = classes.Count,
 
@@ -365,7 +364,7 @@ namespace StudentManagementAPI.Services.Iplementations
             var courseClass = await _context.CourseClasses
                 .Include(c => c.Enrollments)
 
-                .ThenInclude(e => e.User)
+                .ThenInclude(e => e.Student)
 
                 .FirstOrDefaultAsync(c => c.Id == classId && c.TeacherId == teacher.Id);
 
@@ -380,11 +379,11 @@ namespace StudentManagementAPI.Services.Iplementations
                 .Select(e => new TeacherStudentDTO
                 {
 
-                    StudentId = e.UserId,
+                    StudentId = e.StudentId,
 
-                    Username = e.User.Username,
+                    Username = e.Student.User.Username,
 
-                    Name = e.User.Name,
+                    Name = e.Student.Name,
 
                     Status = e.Status.ToString(),
 
@@ -448,23 +447,16 @@ namespace StudentManagementAPI.Services.Iplementations
             // GET ENROLLMENT
             // ======================
             var enrollment = await _context.Enrollments
+               .Include(e => e.Student)
+                 .ThenInclude(s => s.User)
 
-                .Include(e => e.User)
+               .Include(e => e.PaymentItems)
+                 .ThenInclude(pi => pi.Payment)
 
-                .Include(e => e.CourseClass)
+              .Include(e => e.CourseClass)
+                 .ThenInclude(cc => cc.Course)
 
-                 .ThenInclude(cc => cc.Teacher)
-
-                .Include(e => e.PaymentItems)
-
-                  .ThenInclude(pi => pi.Payment)
-                .Include(e => e.CourseClass)
-                  .ThenInclude(cc => cc.Course)
-
-                .Include(e => e.CourseClass)
-                  .ThenInclude(cc => cc.Teacher)
-
-                .FirstOrDefaultAsync(e => e.UserId == studentId && e.CourseClassId == classId && e.CourseClass.TeacherId == teacher.Id);
+              .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseClassId == classId && e.CourseClass.TeacherId == teacher.Id);
 
             if (enrollment == null) throw new BadRequestException("Không tìm thấy enrollment");
 
@@ -472,11 +464,11 @@ namespace StudentManagementAPI.Services.Iplementations
 
             return new EnrollmentDetailDTO
             {
-                StudentId = enrollment.UserId,
+                StudentId = enrollment.StudentId,
 
-                Username = enrollment.User.Username,
+                Username = enrollment.Student.User.Username,
 
-                StudentName = enrollment.User.Name,
+                StudentName = enrollment.Student.Name,
                 CourseName = enrollment.CourseClass.Course.Name,
 
                 EnrollmentStatus = enrollment.Status.ToString(),
@@ -492,6 +484,61 @@ namespace StudentManagementAPI.Services.Iplementations
             };
         }
 
+
+        public async Task<IEnumerable<AvailableTeacherDTO>> GetAvailableTeachersAsync()
+        {
+
+            return await _context.Teachers
+                .Include(t => t.User)
+                .Where(t => t.IsActive)
+                .Select(t => new AvailableTeacherDTO
+                {
+                    UserId = t.UserId,
+                    Username = t.User.Username,
+                    Name = t.Name
+                })
+                .ToListAsync();
+        }
+
+
+        public async Task<TeacherAccountDTO> CreateTeacherAccountAsync(CreateTeacherAccountDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Username))
+                throw new BadRequestException("Username không được để trống");
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                throw new BadRequestException("Password không được để trống");
+
+            if (dto.Password.Length < 6)
+                throw new BadRequestException("Password phải từ 6 ký tự");
+
+            var exists = await _context.Users
+                .AnyAsync(x => x.Username == dto.Username);
+
+            if (exists)
+                throw new BadRequestException("Username đã tồn tại");
+
+            var user = new User
+            {
+                Username = dto.Username,
+
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+
+                Role = "Teacher"
+            };
+
+            _context.Users.Add(user);
+
+            await _context.SaveChangesAsync();
+            return new TeacherAccountDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Role = user.Role
+            };
+        }
+
+       
 
         public async Task<TeacherProfileDTO> GetProfileAsync(string username)
         {
@@ -512,19 +559,19 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 Username = teacher.User.Username,
 
-                Name = teacher.User.Name,
+                Name = teacher.Name,
 
-                Email = teacher.User.Email,
+                Email = teacher.Email,
 
-                Phone = teacher.User.Phone,
+                Phone = teacher.Phone,
 
-                Address = teacher.User.Address,
+                Address = teacher.Address,
 
-                Gender = teacher.User.Gender,
+                Gender = teacher.Gender,
 
-                DateOfBirth = teacher.User.DateOfBirth,
+                DateOfBirth = teacher.DateOfBirth,
 
-                JoinDate = teacher.User.JoinDate,
+                JoinDate = teacher.JoinDate,
 
                 IsActive = teacher.IsActive,
 
@@ -607,11 +654,11 @@ namespace StudentManagementAPI.Services.Iplementations
                 if (dto.Bio.Length > 500)
                     throw new BadRequestException("Bio tối đa 500 ký tự");
             }
-            teacher.User.Email = dto.Email;
-            teacher.User.Phone = dto.Phone;
-            teacher.User.Address = dto.Address;
-            teacher.User.Gender = dto.Gender;
-            teacher.User.DateOfBirth = dto.DateOfBirth;
+            teacher.Email = dto.Email;
+            teacher.Phone = dto.Phone;
+            teacher.Address = dto.Address;
+            teacher.Gender = dto.Gender;
+            teacher.DateOfBirth = dto.DateOfBirth;
 
             teacher.Bio = dto.Bio;
 
@@ -621,8 +668,8 @@ namespace StudentManagementAPI.Services.Iplementations
         public async Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username)
         {
             var teacher = await _context.Teachers
-    .Include(t => t.User)
-    .FirstOrDefaultAsync(t => t.User.Username == username);
+             .Include(t => t.User)
+                  .FirstOrDefaultAsync(t => t.User.Username == username);
 
             if (teacher == null)
                 throw new NotFoundException("Teacher không tồn tại");
@@ -645,7 +692,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 ClassName = c.ClassName,
 
-                TeacherName = teacher.User.Name,
+                TeacherName = teacher.Name,
 
                 DayOfWeek = c.DayOfWeek,
 

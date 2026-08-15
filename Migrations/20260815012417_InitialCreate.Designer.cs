@@ -12,7 +12,7 @@ using StudentManagementAPI.Data;
 namespace StudentManagementAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260804072526_InitialCreate")]
+    [Migration("20260815012417_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -118,16 +118,16 @@ namespace StudentManagementAPI.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("StudentId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseClassId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("StudentId");
 
-                    b.ToTable("StudentCourses", (string)null);
+                    b.ToTable("Enrollment", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagementAPI.Models.Notification", b =>
@@ -219,44 +219,7 @@ namespace StudentManagementAPI.Migrations
                     b.ToTable("PaymentItems");
                 });
 
-            modelBuilder.Entity("StudentManagementAPI.Models.Teacher", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Specialization")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TeacherCode")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("YearsOfExperience")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Teachers");
-                });
-
-            modelBuilder.Entity("StudentManagementAPI.Models.User", b =>
+            modelBuilder.Entity("StudentManagementAPI.Models.Student", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -291,16 +254,100 @@ namespace StudentManagementAPI.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StudentCode")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentCode")
+                        .IsUnique()
+                        .HasFilter("[StudentCode] IS NOT NULL");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Students");
+                });
+
+            modelBuilder.Entity("StudentManagementAPI.Models.Teacher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
+                    b.Property<string>("Specialization")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("StudentCode")
+                    b.Property<string>("TeacherCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("YearsOfExperience")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Teachers");
+                });
+
+            modelBuilder.Entity("StudentManagementAPI.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
@@ -314,10 +361,6 @@ namespace StudentManagementAPI.Migrations
                         new
                         {
                             Id = 1,
-                            Age = 25,
-                            IsActive = false,
-                            JoinDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "admin123",
                             PasswordHash = "$2a$11$hDet60JpHWxzsFIrLjU1bOohiLojZ03BlxvC0/9RysBDXVQPioSVq",
                             Role = "Admin",
                             Username = "admin"
@@ -350,15 +393,15 @@ namespace StudentManagementAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("StudentManagementAPI.Models.User", "User")
+                    b.HasOne("StudentManagementAPI.Models.Student", "Student")
                         .WithMany("Enrollments")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("CourseClass");
 
-                    b.Navigation("User");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("StudentManagementAPI.Models.Notification", b =>
@@ -402,6 +445,17 @@ namespace StudentManagementAPI.Migrations
                     b.Navigation("Payment");
                 });
 
+            modelBuilder.Entity("StudentManagementAPI.Models.Student", b =>
+                {
+                    b.HasOne("StudentManagementAPI.Models.User", "User")
+                        .WithOne("Student")
+                        .HasForeignKey("StudentManagementAPI.Models.Student", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("StudentManagementAPI.Models.Teacher", b =>
                 {
                     b.HasOne("StudentManagementAPI.Models.User", "User")
@@ -433,6 +487,11 @@ namespace StudentManagementAPI.Migrations
                     b.Navigation("PaymentItems");
                 });
 
+            modelBuilder.Entity("StudentManagementAPI.Models.Student", b =>
+                {
+                    b.Navigation("Enrollments");
+                });
+
             modelBuilder.Entity("StudentManagementAPI.Models.Teacher", b =>
                 {
                     b.Navigation("CourseClasses");
@@ -440,11 +499,11 @@ namespace StudentManagementAPI.Migrations
 
             modelBuilder.Entity("StudentManagementAPI.Models.User", b =>
                 {
-                    b.Navigation("Enrollments");
-
                     b.Navigation("Notifications");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("Student");
 
                     b.Navigation("Teacher");
                 });

@@ -9,21 +9,18 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 namespace StudentManagementAPI.Services.Interfaces
 {
-    public interface IUserService
+    public interface IStudentService
     {
         // 👉 Admin dùng
-        Task<IEnumerable<UserDTO>> GetAllStudentsAsync();
-        Task<UserProfileDTO> GetByIdAsync(int id);
+        Task<IEnumerable<StudentDTO>> GetAllStudentsAsync();
+        Task<StudentProfileDTO> GetByIdAsync(int id);
         Task<AdminStudentDetailDTO> GetStudentDetailAsync(int id);
 
-        Task<IEnumerable<AvailableTeacherDTO>> GetAvailableTeachersAsync();
-        Task<TeacherAccountDTO> CreateTeacherAccountAsync(CreateTeacherAccountDTO dto);
+      
         //Calendar
         Task<IEnumerable<ScheduleDTO>> GetMyScheduleAsync(string username);
-
-
         // PROFILE
-        Task<UserProfileDTO> GetProfileAsync(string username);
-        Task UpdateProfileAsync(string username, UpdateUserProfileDTO dto);
+        Task<StudentProfileDTO> GetProfileAsync(string username);
+        Task UpdateProfileAsync(string username, UpdateStudentProfileDTO dto);
     }
 }

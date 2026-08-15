@@ -105,7 +105,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                             ClassName = cl.ClassName,
 
-                            TeacherName = cl.Teacher != null ? cl.Teacher.User.Name : "Chưa phân công",
+                            TeacherName = cl.Teacher != null ? cl.Teacher.Name : "Chưa phân công",
 
                             DayOfWeek = cl.DayOfWeek,
 
@@ -408,7 +408,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 TeacherId = result.TeacherId,
 
-                TeacherName = result.Teacher?.User?.Name ?? "Chưa phân công",
+                TeacherName = result.Teacher?.Name ?? "Chưa phân công",
 
                 ClassName = result.ClassName,
 
@@ -471,7 +471,7 @@ namespace StudentManagementAPI.Services.Iplementations
                     CourseName = cc.Course.Name,
                     // teacher 
                     TeacherId = cc.TeacherId,
-                    TeacherName = cc.Teacher?.User?.Name ?? "Chưa phân công",
+                    TeacherName = cc.Teacher?.Name ?? "Chưa phân công",
 
                     ClassName = cc.ClassName,
                     Price = cc.Course.Price,
@@ -620,7 +620,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 TeacherId = result.TeacherId,
 
-                TeacherName = result.Teacher?.User?.Name ?? "Chưa phân công",
+                TeacherName = result.Teacher?.Name ?? "Chưa phân công",
 
                 ClassName = result.ClassName,
 
@@ -720,7 +720,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 // lấy Enrollment
                 .Include(cc => cc.Enrollments)
-                    .ThenInclude(e => e.User)
+                    .ThenInclude(e => e.Student)
 
                 // lấy Payment
                 .Include(cc => cc.Enrollments)
@@ -749,7 +749,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
                 CourseName = courseClass.Course.Name,
 
-                TeacherName = courseClass.Teacher != null ? courseClass.Teacher.User.Name : "Chưa phân công",
+                TeacherName = courseClass.Teacher != null ? courseClass.Teacher.Name : "Chưa phân công",
 
                 DayOfWeek = courseClass.DayOfWeek,
 
@@ -766,11 +766,11 @@ namespace StudentManagementAPI.Services.Iplementations
                     var payment = e.PaymentItems.OrderByDescending(pi => pi.Payment.CreatedAt).FirstOrDefault();
                     return new ClassStudentDTO
                     {
-                        StudentId = e.UserId,
+                        StudentId = e.StudentId,
 
-                        StudentName = e.User.Name,
+                        StudentName = e.Student.Name,
 
-                        Username = e.User.Username,
+                        Username = e.Student.User.Username,
 
                         EnrollmentStatus = e.Status.ToString(),
 

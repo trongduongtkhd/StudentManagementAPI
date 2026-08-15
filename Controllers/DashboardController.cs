@@ -34,17 +34,13 @@ namespace StudentManagementAPI.Controllers
 
         // ================= USER =================
 
-        [HttpGet("user")]
-        [Authorize(Roles = "User")]
+        [HttpGet("student")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetUserDashboard()
         {
-            var username =
-                User.FindFirstValue(ClaimTypes.Name);
+            var username = User.FindFirstValue(ClaimTypes.Name);
 
-            var data =
-                await _dashboardService
-                    .GetUserDashboardAsync(username);
-
+            var data = await _dashboardService.GetUserDashboardAsync(username);
             return Ok(data);
         }
     }
