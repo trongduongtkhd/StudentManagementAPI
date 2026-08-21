@@ -107,8 +107,7 @@ namespace StudentManagementAPI.Services.Iplementations
 
         public async Task<object> LoginAsync(LoginDTO dto)
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Username == dto.Username);
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Username == dto.Username);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
                 throw new UnauthorizedException("Sai tài khoản hoặc mật khẩu");
@@ -125,24 +124,21 @@ namespace StudentManagementAPI.Services.Iplementations
 
         private string GenerateToken(User user)
         {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("THIS_IS_MY_SUPER_SECRET_KEY_123456789_ABC"));
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes("THIS_IS_MY_SUPER_SECRET_KEY_123456789_ABC"));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var creds = new SigningCredentials(
-                key, SecurityAlgorithms.HmacSha256);
             var claims = new[]
           {
             new Claim("id", user.Id.ToString()), // 🔥 QUAN TRỌNG
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Role, user.Role)
-        };
+         };
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds
             );
-
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }

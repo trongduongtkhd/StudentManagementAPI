@@ -14,7 +14,6 @@ namespace StudentManagementAPI.Services.Iplementations
 {
     public class EnrollmentService : IEnrollmentService
     {
-
         private readonly AppDbContext _context;
         private readonly INotificationService _notificationService;
 
@@ -25,14 +24,15 @@ namespace StudentManagementAPI.Services.Iplementations
         }
         public async Task EnrollAsync(string username, int courseClassId)
         {
-            // ================= USER =================
+            // ================= Student =================
             var student = await _context.Students
+                .Include(s => s.User) 
                 .Include(u => u.Enrollments)
                     .ThenInclude(sc => sc.CourseClass)
                 .FirstOrDefaultAsync(u => u.User.Username == username);
 
             if (student == null)
-                throw new NotFoundException("User không tồn tại");
+                throw new NotFoundException("Học viên không tồn tại");
 
             // ================= CLASS =================
             var selectedClass = await _context.CourseClasses

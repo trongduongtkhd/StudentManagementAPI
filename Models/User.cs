@@ -14,7 +14,6 @@ namespace StudentManagementAPI.Models
         public Teacher Teacher { get; set; }
 
         // 1 User → nhiều Payments
-
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
         // 1 User → nhiều Notifications
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();

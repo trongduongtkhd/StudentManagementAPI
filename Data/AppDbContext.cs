@@ -68,6 +68,16 @@ namespace StudentManagementAPI.Data
                   .WithMany(sc => sc.PaymentItems)
                    .HasForeignKey(pi => pi.EnrollmentId)
                      .OnDelete(DeleteBehavior.NoAction);
+
+            // =====================================================
+            // USER 1 - N PAYMENT
+            // =====================================================
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.Payments)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
             // =====================================================
             // DECIMAL CONFIG
             // =====================================================

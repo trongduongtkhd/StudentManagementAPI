@@ -133,19 +133,12 @@ namespace StudentManagementAPI.Services.Iplementations
             // =========================
             if (string.IsNullOrWhiteSpace(dto.Name))
                 throw new BadRequestException("Tên khóa học không được để trống");
-
-
             // =========================
             // CHECK DUPLICATE
             // =========================
-            var exists = await _context.Courses
-                .AnyAsync(c =>
-                    c.Name.ToLower() ==
-                    dto.Name.ToLower());
+            var exists = await _context.Courses.AnyAsync(c => c.Name.ToLower() == dto.Name.ToLower());
 
-            if (exists)
-                throw new BadRequestException(
-                    "Course đã tồn tại");
+            if (exists) throw new BadRequestException("Course đã tồn tại");
 
             // =========================
             // CREATE ENTITY
@@ -153,7 +146,6 @@ namespace StudentManagementAPI.Services.Iplementations
             var course = new Course
             {
                 Name = dto.Name.Trim(),
-
                 Description = dto.Description,
                 Price = dto.Price,
                 ImageUrl = dto.ImageUrl
@@ -188,9 +180,7 @@ namespace StudentManagementAPI.Services.Iplementations
         // =========================================================
         // UPDATE COURSE
         // =========================================================
-        public async Task<CourseDTO> UpdateAsync(
-            int id,
-            UpdateCourseDTO dto)
+        public async Task<CourseDTO> UpdateAsync(int id, UpdateCourseDTO dto)
         {
             // =========================
             // FIND COURSE
@@ -200,45 +190,31 @@ namespace StudentManagementAPI.Services.Iplementations
                     .ThenInclude(cl => cl.Enrollments)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-            if (course == null)
-                throw new NotFoundException(
-                    "Course không tồn tại");
+            if (course == null) throw new NotFoundException("Course không tồn tại");
 
             // =========================
             // VALIDATE NAME
             // =========================
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                throw new BadRequestException(
-                    "Tên khóa học không được để trống");
+            if (string.IsNullOrWhiteSpace(dto.Name)) throw new BadRequestException("Tên khóa học không được để trống");
 
             // =========================
             // CHECK DUPLICATE
             // =========================
-            var exists = await _context.Courses
-                .AnyAsync(c =>
-                    c.Name.ToLower() ==
-                    dto.Name.ToLower()
-                    && c.Id != id);
+            var exists = await _context.Courses.AnyAsync(c => c.Name.ToLower() == dto.Name.ToLower() && c.Id != id);
 
-            if (exists)
-                throw new BadRequestException("Course đã tồn tại");
-
+            if (exists) throw new BadRequestException("Course đã tồn tại");
 
             // =========================
             // UPDATE ENTITY
             // =========================
             course.Name = dto.Name.Trim();
-
             course.Description = dto.Description;
-
             course.ImageUrl = dto.ImageUrl;
             course.Price = dto.Price;
-
             // =========================
             // SAVE DATABASE
             // =========================
             await _context.SaveChangesAsync();
-
             // =========================
             // RETURN DTO
             // =========================
@@ -253,39 +229,27 @@ namespace StudentManagementAPI.Services.Iplementations
                 ImageUrl = course.ImageUrl,
 
                 TotalClasses = course.Classes.Count,
+
                 Price = course.Price,
 
-                // =========================
-                // FIX:
-                // Không count Cancelled
-                // =========================
-                TotalStudents = course.Classes
-                    .SelectMany(cl => cl.Enrollments)
-                    .Count(sc =>
-                        sc.Status != EnrollmentStatus.Cancelled)
+                TotalStudents = course.Classes.SelectMany(cl => cl.Enrollments).Count(sc => sc.Status != EnrollmentStatus.Cancelled)
+
             }; 
         }
-
         // =========================================================
         // DELETE COURSE
         // =========================================================
         public async Task<bool> DeleteAsync(int id)
         {
-            var course = await _context.Courses
-                .Include(c => c.Classes)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var course = await _context.Courses.Include(c => c.Classes).FirstOrDefaultAsync(c => c.Id == id);
 
-            if (course == null)
-                throw new NotFoundException(
-                    "Course không tồn tại");
+            if (course == null) throw new NotFoundException("Course không tồn tại");
 
             // =========================
             // BUSINESS RULE:
             // Không cho xóa nếu đã có class
             // =========================
-            if (course.Classes.Any())
-                throw new BadRequestException(
-                    "Không thể xóa khóa học vì đã có lớp học");
+            if (course.Classes.Any()) throw new BadRequestException("Không thể xóa khóa học vì đã có lớp học");
 
             _context.Courses.Remove(course);
 
@@ -293,7 +257,6 @@ namespace StudentManagementAPI.Services.Iplementations
 
             return true;
         }
-
         // =========================================================
         // CREATE COURSE CLASS
         // =========================================================
@@ -303,8 +266,8 @@ namespace StudentManagementAPI.Services.Iplementations
             // CHECK COURSE
             // =========================
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == dto.CourseId);
-            if (course == null)
-                throw new NotFoundException("Course không tồn tại");
+
+            if (course == null) throw new NotFoundException("Course không tồn tại");
             // =========================
             // CHECK TEACHER
             // =========================
@@ -314,8 +277,7 @@ namespace StudentManagementAPI.Services.Iplementations
                 teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.Id == dto.TeacherId.Value);
                 if (teacher == null)
                 {
-                    throw new NotFoundException(
-                        "Teacher không tồn tại");
+                    throw new NotFoundException("Teacher không tồn tại");
                 }
                 if (!teacher.IsActive)
                 {
@@ -325,37 +287,24 @@ namespace StudentManagementAPI.Services.Iplementations
             // =========================
             // VALIDATE TIME
             // =========================
-            if (dto.StartTime >= dto.EndTime)
-                throw new BadRequestException(
-                    "StartTime phải nhỏ hơn EndTime");
+            if (dto.StartTime >= dto.EndTime) throw new BadRequestException("StartTime phải nhỏ hơn EndTime");
 
             // =========================
             // VALIDATE DATE
             // =========================
-            if (dto.StartDate > dto.EndDate)
-                throw new BadRequestException(
-                    "StartDate không hợp lệ");
-
+            if (dto.StartDate > dto.EndDate) throw new BadRequestException("StartDate không hợp lệ");
             // =========================
             // VALIDATE MAX STUDENTS
             // =========================
-            if (dto.MaxStudents <= 0)
-                throw new BadRequestException(
-                    "MaxStudents phải lớn hơn 0");
+            if (dto.MaxStudents <= 0) throw new BadRequestException("MaxStudents phải lớn hơn 0");
 
             // =========================
             // CHECK DUPLICATE CLASS
             // =========================
             var classExists = await _context.CourseClasses
-                .AnyAsync(cc =>
-                    cc.CourseId == dto.CourseId &&
-                    cc.ClassName.ToLower() ==
-                    dto.ClassName.ToLower());
+                .AnyAsync(cc => cc.CourseId == dto.CourseId && cc.ClassName.ToLower() == dto.ClassName.ToLower());
 
-            if (classExists)
-                throw new BadRequestException(
-                    "Class đã tồn tại");
-
+            if (classExists) throw new BadRequestException("Class đã tồn tại");
             // =========================
             // CREATE ENTITY
             // =========================
@@ -394,7 +343,6 @@ namespace StudentManagementAPI.Services.Iplementations
                       .Include(cc => cc.Enrollments)
                          .FirstAsync(cc => cc.Id == courseClass.Id);
             var currentStudents = result.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled);
-
             // =========================
             // RETURN DTO
             // =========================

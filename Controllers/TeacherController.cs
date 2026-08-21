@@ -14,8 +14,7 @@ namespace StudentManagementAPI.Controllers
     public class TeachersController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
-        public TeachersController(
-            ITeacherService teacherService)
+        public TeachersController( ITeacherService teacherService)     
         {
             _teacherService = teacherService;
         }

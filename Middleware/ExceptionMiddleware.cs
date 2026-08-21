@@ -17,7 +17,7 @@ namespace StudentManagementAPI.Middleware
             _next = next;
             _logger = logger;
         }
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context) // HttpContext chứa thông tin về HTTP Request và Http Response
         {
             try
             {
@@ -31,7 +31,6 @@ namespace StudentManagementAPI.Middleware
                     "Unhandled exception: {Message}",
                     ex.Message
                 );
-
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -48,21 +47,17 @@ namespace StudentManagementAPI.Middleware
 
                 case BadRequestException:
                     statusCode = (int)HttpStatusCode.BadRequest;
-
                     message = exception.Message;
                     break;
 
                 case ForbiddenException:
-
                     statusCode = (int)HttpStatusCode.Forbidden;
                     message = exception.Message;
                     break;
                 case UnauthorizedException:
 
                     statusCode = (int)HttpStatusCode.Unauthorized;
-
                     message = exception.Message;
-
                     break;
                 default:
                     statusCode = 500;
@@ -70,7 +65,6 @@ namespace StudentManagementAPI.Middleware
             }
 
             context.Response.ContentType = "application/json";
-
             context.Response.StatusCode = statusCode;
 
             var response = new

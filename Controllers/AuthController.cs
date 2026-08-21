@@ -22,18 +22,17 @@ namespace StudentManagementAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-
         public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             try
             {
                 await _authService.RegisterAsync(dto);
-
                 return Ok(new
                 {
                     message = "Đăng ký thành công"
@@ -53,12 +52,12 @@ namespace StudentManagementAPI.Controllers
         {
             var result = await _authService.LoginAsync(dto);
             return Ok(
-           new ApiResponse<object>(
-        true,
-        "Đăng nhập thành công",
-        result
-    )
-);
+              new ApiResponse<object>(
+               true,
+              "Đăng nhập thành công",
+              result
+            ) 
+          );
         }
     }
 }
